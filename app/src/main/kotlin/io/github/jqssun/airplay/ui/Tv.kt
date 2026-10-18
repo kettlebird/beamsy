@@ -4,6 +4,10 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
+import android.os.Build
 import androidx.compose.foundation.border
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -26,6 +30,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+
+// the TV's own link to the router: null when offline or unknown, 0 for Ethernet, 1..4 Wi-Fi bars
+@Suppress("DEPRECATION") // connectionInfo: the only RSSI source on API 28 and some TV drivers
+fun Context.linkBars(): Int? {
+    val cm = getSystemService(ConnectivityManager::class.java)
+    val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return null
+    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return 0
+    if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return null
+    var rssi = if (Build.VERSION.SDK_INT >= 29) caps.signalStrength else NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED
+    if (rssi == NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED) rssi = getSystemService(WifiManager::class.java).connectionInfo.rssi
+    return when {
+        rssi <= -127 || rssi >= 0 -> null // driver didn't report one
+        rssi >= -55 -> 4
+        rssi >= -66 -> 3
+        rssi >= -77 -> 2
+        else -> 1
+    }
+}
 
 fun Context.isTvDevice(): Boolean =
     packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||

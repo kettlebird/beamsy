@@ -283,6 +283,8 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
         service?.stopServer()
     }
 
+    fun weakLink() = service?.videoRenderer?.weakLink() == true
+
     private var videoSurface: Surface? = null
 
     fun onSurfaceAvailable(surface: Surface) {

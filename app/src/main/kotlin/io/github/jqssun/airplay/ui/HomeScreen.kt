@@ -4,7 +4,10 @@ import android.content.Context
 import android.text.format.DateFormat
 import android.view.Surface
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -69,6 +73,7 @@ private val Wallpaper = Brush.linearGradient(listOf(Color(0xFF0C1220), Color(0xF
 private val Ink = Color(0xFFF2F5FA)
 private val InkSoft = Color(0xFFA3B0C2)
 private val Accent = Color(0xFF7CC4FF)
+private val Warn = Color(0xFFFFC27A)
 
 @Composable
 fun HomeScreen(
@@ -113,6 +118,8 @@ fun HomeScreen(
     val idle = if (connections > 0 || renaming || settingsOpen) 0L else now - maxOf(lastInteraction, lastDisconnect)
     val mode = homeMode(mirroring, audioOnly, idle)
     val clock = timeFormat.format(Date(now))
+    val link = remember(now / 5_000) { context.linkBars() }
+    val weakLink = remember(now) { mode == HomeMode.MIRROR && viewModel.weakLink() }
 
     // nothing else is focusable outside the steps screen; the root catches the remote there
     val rootFocus = remember { FocusRequester() }
@@ -163,6 +170,7 @@ fun HomeScreen(
                         clock = clock,
                         failed = serverState == ServerState.ERROR,
                         unlocked = unlocked,
+                        link = link,
                         localNetwork = localNetwork,
                         onLocalNetwork = onLocalNetwork,
                         onUnlock = { runCatching { openUnlockListing(context) } }, // no store or browser on some TVs
@@ -172,6 +180,21 @@ fun HomeScreen(
                     else -> Ambient(name, clock, "Screen Mirroring on your iPhone to connect")
                 }
             }
+        }
+        AnimatedVisibility(
+            visible = weakLink,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopEnd).padding(horizontal = 48.dp, vertical = 27.dp)
+        ) {
+            // two short lines so it fits in the side bar beside upright video
+            Text(
+                "Weak Wi-Fi connection\nThe picture may stutter",
+                color = Ink, fontSize = 16.sp,
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 
@@ -199,6 +222,7 @@ private fun Steps(
     clock: String,
     failed: Boolean,
     unlocked: Boolean,
+    link: Int?,
     localNetwork: LocalNetworkAccess,
     onLocalNetwork: () -> Unit,
     onUnlock: () -> Unit,
@@ -236,6 +260,10 @@ private fun Steps(
                         Text(step, color = Ink, fontSize = 22.sp)
                     }
                 }
+                if (!failed && link != null) {
+                    Spacer(Modifier.height(12.dp))
+                    LinkLine(link)
+                }
                 if (localNetwork != LocalNetworkAccess.GRANTED) {
                     Spacer(Modifier.height(16.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -264,6 +292,29 @@ private fun Steps(
             else HomeButton("Free · 720p · Full HD: get the Unlock app, \$6.99 once", onClick = onUnlock)
             HomeButton("Settings", onClick = onSettings, modifier = Modifier.focusRequester(settingsFocus))
         }
+    }
+}
+
+@Composable
+private fun LinkLine(bars: Int) {
+    if (bars == 0) {
+        Text("This TV is connected by Ethernet", color = InkSoft, fontSize = 18.sp)
+        return
+    }
+    val weak = bars == 1
+    Row(verticalAlignment = Alignment.Bottom) {
+        listOf(6, 10, 14, 18).forEachIndexed { i, h ->
+            Box(
+                Modifier.padding(end = 3.dp).width(5.dp).height(h.dp)
+                    .background(if (i < bars) (if (weak) Warn else Ink) else InkSoft.copy(alpha = 0.3f))
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            "This TV's Wi-Fi signal: " + listOf("Weak", "Fair", "Good", "Strong")[bars - 1] +
+                if (weak) ". Mirroring may stutter." else "",
+            color = if (weak) Warn else InkSoft, fontSize = 18.sp
+        )
     }
 }
 

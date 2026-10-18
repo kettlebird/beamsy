@@ -44,6 +44,11 @@ class VideoRenderer(ctx: Context) {
     private var _frameIntervalIdx = 0
     private var _frameIntervalCount = 0
     private var _lastOutputFrameNs = 0L
+    // per-second min/max of (arrival - sender timestamp); frames held up on the way arrive late
+    // against the fastest recent ones, while a still screen just sends nothing
+    private val _lagSec = LongArray(LAG_WINDOW_S)
+    private val _lagMin = LongArray(LAG_WINDOW_S)
+    private val _lagMax = LongArray(LAG_WINDOW_S)
     // anchors that map decoder PTS (us) to System.nanoTime() for scheduled rendering
     private var _ptsBaseUs = Long.MIN_VALUE
     private var _wallBaseNs = 0L
@@ -92,6 +97,35 @@ class VideoRenderer(ctx: Context) {
         fps = 0; bitrateBps = 0; frameCount = 0; codecName = ""
         droppedFrames = 0; framePacingJitterUs = 0
         _framesThisSec = 0; _bytesThisSec = 0
+        _lagSec.fill(0)
+    }
+
+    private fun _recordLag(ntpTimeNs: Long) {
+        if (ntpTimeNs <= 0) return // not clock-synced yet
+        val nowMs = System.currentTimeMillis()
+        val d = nowMs - ntpTimeNs / 1_000_000
+        val sec = nowMs / 1000
+        val i = (sec % LAG_WINDOW_S).toInt()
+        if (_lagSec[i] != sec) {
+            _lagSec[i] = sec; _lagMin[i] = d; _lagMax[i] = d
+        } else {
+            _lagMin[i] = minOf(_lagMin[i], d); _lagMax[i] = maxOf(_lagMax[i], d)
+        }
+    }
+
+    // how far behind the window's fastest frame the slowest frame of each of the last [n] seconds ran, in ms
+    private fun _lateMs(n: Int): List<Long> {
+        val sec = System.currentTimeMillis() / 1000
+        val window = _lagSec.indices.filter { sec - _lagSec[it] in 0 until LAG_WINDOW_S }
+        val base = window.minOfOrNull { _lagMin[it] } ?: return emptyList()
+        return window.filter { sec - _lagSec[it] < n }.map { _lagMax[it] - base }
+    }
+
+    // polled unlocked by the UI each second: a torn read only nudges a heuristic
+    // iOS mostly rides out congestion by cutting fps and bitrate (indistinguishable from calm content),
+    // so this flags what's left: repeated late seconds, or one outright freeze
+    fun weakLink(): Boolean = _lateMs(WEAK_WINDOW_S).let { late ->
+        late.count { it > WEAK_LATE_MS } >= WEAK_SECONDS || late.any { it > FREEZE_MS }
     }
 
     private fun _updateStats(size: Int) {
@@ -113,7 +147,7 @@ class VideoRenderer(ctx: Context) {
     private fun _emitBenchmarkLine() {
         val msg = "fps=$fps bitrate=${bitrateBps / 1000}kbps " +
             "jitter=${framePacingJitterUs}us frames=$frameCount " +
-            "dropped=$droppedFrames codec=$codecName " +
+            "dropped=$droppedFrames late=${_lateMs(1).maxOrNull() ?: 0}ms codec=$codecName " +
             "res=${videoWidth}x${videoHeight}"
         Log.i(BENCH_TAG, msg)
         benchmarkLogCallback?.invoke(msg)
@@ -121,6 +155,7 @@ class VideoRenderer(ctx: Context) {
 
     fun feedFrame(data: ByteArray, ntpTimeNs: Long, isH265: Boolean) {
         synchronized(lock) {
+            _recordLag(ntpTimeNs)
             _updateStats(data.size)
             if (videoWidth == 0 || videoHeight == 0) return
 
@@ -323,5 +358,12 @@ class VideoRenderer(ctx: Context) {
         private const val FEED_WAIT_US = 20_000L
         private const val FEED_RETRIES = 10
         private const val FIRST_FEED_RETRIES = 50
+        private const val LAG_WINDOW_S = 10
+        // weak: frames ran this late in this many of the last few seconds (shows after ~2s, clears ~4s after)
+        private const val WEAK_LATE_MS = 150L
+        private const val WEAK_WINDOW_S = 5
+        private const val WEAK_SECONDS = 2
+        // good Wi-Fi peaked at ~300ms in one second; a congested link froze for 1.7s
+        private const val FREEZE_MS = 500L
     }
 }
