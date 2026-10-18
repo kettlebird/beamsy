@@ -1,26 +1,20 @@
 package io.github.jqssun.airplay
 
 import android.Manifest
-import android.app.PictureInPictureParams
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
-import android.util.Rational
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -39,7 +33,6 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private var service: AirPlayService? = null
-    val isInPip = mutableStateOf(false)
     private val logCallback: (String) -> Unit = { viewModel.addLog(it) }
     private val pinCallback: (String?) -> Unit = { viewModel.showPin(it) }
 
@@ -68,9 +61,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val missing = buildList {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !_granted(Manifest.permission.POST_NOTIFICATIONS)) {
-                add(Manifest.permission.POST_NOTIFICATIONS)
-            }
             if (!hasLocalNetwork()) add(Manifest.permission.ACCESS_LOCAL_NETWORK)
         }
         if (missing.isNotEmpty()) permissions.launch(missing.toTypedArray())
@@ -97,35 +87,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // auto-enter pre-declared in pip params
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    combine(
-                        viewModel.serverState, viewModel.connectionCount,
-                        viewModel.videoPlaybackActive, viewModel.videoPlaybackAspect,
-                        viewModel.videoAspect
-                    ) { _, _, _, _, _ -> }.collect { setPictureInPictureParams(_pipParams()) }
-                }
-            }
-        }
-
         setContent {
             AirPlayTheme {
                 MainScreen(
                     viewModel = viewModel,
-                    isInPip = isInPip.value,
                     onSurfaceAvailable = { viewModel.onSurfaceAvailable(it) },
                     onSurfaceDestroyed = { viewModel.onSurfaceDestroyed(it) },
-                    onPip = { enterPip() },
                     onLocalNetwork = ::_requestLocalNetwork
                 )
             }
         }
     }
-
-    private fun _granted(permission: String) =
-        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
     private fun _autoStart() {
         val svc = service ?: return
@@ -167,46 +139,13 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         _syncLocalNetwork()
         _refreshForeground()
-    }
-
-    fun enterPip() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        enterPictureInPictureMode(_pipParams())
-    }
-
-    private fun _pipParams(): PictureInPictureParams {
-        val aspect = if (viewModel.videoPlaybackActive.value) viewModel.videoPlaybackAspect.value
-            else viewModel.videoAspect.value
-        val rational = Rational((aspect * 1000).toInt().coerceIn(1, 2390), 1000)
-        val builder = PictureInPictureParams.Builder().setAspectRatio(rational)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(_shouldAutoPip())
-        }
-        return builder.build()
-    }
-
-    private fun _shouldAutoPip(): Boolean =
-        viewModel.serverState.value == AirPlayService.ServerState.RUNNING &&
-            viewModel.connectionCount.value > 0
-
-    override fun onUserLeaveHint() {
-        super.onUserLeaveHint()
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && _shouldAutoPip()) enterPip()
-    }
-
-    override fun onPictureInPictureModeChanged(inPip: Boolean, newConfig: Configuration) {
-        super.onPictureInPictureModeChanged(inPip, newConfig)
-        isInPip.value = inPip
+        _autoStart() // re-advertise after returning to the foreground
     }
 
     override fun onStop() {
         super.onStop()
-        // never stop mid-session
-        if (!viewModel.pref(Prefs.RUN_IN_BACKGROUND).value && !isChangingConfigurations &&
-            viewModel.serverState.value == AirPlayService.ServerState.RUNNING &&
-            viewModel.connectionCount.value == 0) {
-            viewModel.stopServer()
-        }
+        // foreground only: leaving the app closes sessions, even mid-session
+        if (!isChangingConfigurations) viewModel.stopServer()
     }
 
     override fun onDestroy() {

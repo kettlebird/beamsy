@@ -30,11 +30,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.jqssun.airplay"
-        minSdk = 24
+        applicationId = "com.screenmirroringtv.app"
+        minSdk = 28
         targetSdk = 37
-        versionCode = 33
-        versionName = "0.0.33"
+        versionCode = 1
+        versionName = "0.1.0"
 
         externalNativeBuild {
             cmake {
@@ -137,4 +137,6 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+
+    testImplementation("junit:junit:4.13.2")
 }

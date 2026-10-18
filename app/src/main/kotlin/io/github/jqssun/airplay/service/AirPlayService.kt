@@ -38,6 +38,7 @@ import io.github.jqssun.airplay.changes
 import io.github.jqssun.airplay.get
 import io.github.jqssun.airplay.hasLocalNetwork
 import io.github.jqssun.airplay.realDisplaySize
+import io.github.jqssun.airplay.tvName
 import io.github.jqssun.airplay.audio.DacpController
 import io.github.jqssun.airplay.audio.DacpPlayer
 import io.github.jqssun.airplay.audio.DmapParser
@@ -362,7 +363,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             _failStart()
             return
         }
-        val effectiveName = prefs[Prefs.SERVER_NAME].ifBlank { Prefs.SERVER_NAME.def }
+        val effectiveName = tvName(prefs)
 
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "airplay:server").apply { acquire() }
