@@ -3,6 +3,7 @@ package io.github.jqssun.airplay.ui
 import android.content.Context
 import android.text.format.DateFormat
 import android.view.Surface
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,6 +58,7 @@ import io.github.jqssun.airplay.Prefs
 import io.github.jqssun.airplay.R
 import io.github.jqssun.airplay.isUnlocked
 import io.github.jqssun.airplay.openUnlockListing
+import io.github.jqssun.airplay.service.AirPlayService.ServerState
 import io.github.jqssun.airplay.tvName
 import io.github.jqssun.airplay.viewmodel.LocalNetworkAccess
 import io.github.jqssun.airplay.viewmodel.MainViewModel
@@ -82,6 +84,7 @@ fun HomeScreen(
     val sender by viewModel.senderName.collectAsState()
     val aspect by viewModel.videoAspect.collectAsState()
     val localNetwork by viewModel.localNetwork.collectAsState()
+    val serverState by viewModel.serverState.collectAsState()
     val savedName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
     val prefs = remember { context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
     val name = remember(savedName) { context.tvName(prefs) }
@@ -114,6 +117,9 @@ fun HomeScreen(
     val rootFocus = remember { FocusRequester() }
     var swallowUp by remember { mutableStateOf(false) }
     LaunchedEffect(mode) { if (mode != HomeMode.STEPS) rootFocus.requestFocusUntilLanded() }
+
+    // with predictive back (targetSdk 37) Back never reaches onPreviewKeyEvent; on ambient it just wakes
+    BackHandler(enabled = mode == HomeMode.AMBIENT) { lastInteraction = System.currentTimeMillis() }
 
     Box(
         Modifier
@@ -153,6 +159,7 @@ fun HomeScreen(
                     HomeMode.STEPS -> Steps(
                         name = name,
                         clock = clock,
+                        failed = serverState == ServerState.ERROR,
                         unlocked = unlocked,
                         localNetwork = localNetwork,
                         onLocalNetwork = onLocalNetwork,
@@ -179,6 +186,7 @@ fun HomeScreen(
 private fun Steps(
     name: String,
     clock: String,
+    failed: Boolean,
     unlocked: Boolean,
     localNetwork: LocalNetworkAccess,
     onLocalNetwork: () -> Unit,
@@ -202,7 +210,8 @@ private fun Steps(
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(36.dp))
-                listOf(
+                if (failed) Text("This TV can't be found right now. Close and reopen the app.", color = Ink, fontSize = 22.sp)
+                else listOf(
                     "Connect your iPhone to the same Wi-Fi as this TV",
                     "Open Control Center",
                     "Tap Screen Mirroring → $name"

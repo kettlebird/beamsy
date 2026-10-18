@@ -25,7 +25,6 @@ import io.github.jqssun.airplay.viewmodel.LocalNetworkAccess
 import io.github.jqssun.airplay.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -78,9 +77,8 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(viewModel.pref(Prefs.KEEP_SCREEN_ON), viewModel.connectionCount) { keep, conns ->
-                    keep && conns > 0
-                }.collect { on ->
+                // held whenever started, so ambient isn't replaced by the system screensaver (which stops the server)
+                viewModel.pref(Prefs.KEEP_SCREEN_ON).collect { on ->
                     if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
@@ -101,7 +99,9 @@ class MainActivity : ComponentActivity() {
 
     private fun _autoStart() {
         val svc = service ?: return
-        if (viewModel.pref(Prefs.AUTO_START).value && svc.serverState.value == AirPlayService.ServerState.STOPPED && hasLocalNetwork()) {
+        val state = svc.serverState.value
+        // ERROR too: a failed start (e.g. port taken) gets another try on the next onStart
+        if (viewModel.pref(Prefs.AUTO_START).value && (state == AirPlayService.ServerState.STOPPED || state == AirPlayService.ServerState.ERROR) && hasLocalNetwork()) {
             viewModel.startServer()
         }
     }

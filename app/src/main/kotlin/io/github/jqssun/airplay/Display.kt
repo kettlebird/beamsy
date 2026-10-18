@@ -6,6 +6,7 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.provider.Settings
 import android.view.Display
+import io.github.jqssun.airplay.ui.safeTvName
 
 // physical panel resolution
 fun Context.realDisplaySize(): Pair<Int, Int> {
@@ -20,4 +21,4 @@ fun Context.deviceName(): String =
     Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)?.takeIf { it.isNotBlank() } ?: Build.MODEL
 
 // advertised name: user override, else the TV's own name
-fun Context.tvName(prefs: SharedPreferences): String = prefs[Prefs.SERVER_NAME].ifBlank { deviceName() }
+fun Context.tvName(prefs: SharedPreferences): String = prefs[Prefs.SERVER_NAME].ifBlank { safeTvName(deviceName(), Build.MODEL) }

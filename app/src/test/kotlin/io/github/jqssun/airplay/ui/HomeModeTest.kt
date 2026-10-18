@@ -18,3 +18,19 @@ class HomeModeTest {
     @Test fun nameTooLongBytes() = assertFalse(isValidTvName("📺".repeat(13)))  // 52 UTF-8 bytes
     @Test fun nameMaxOk() = assertTrue(isValidTvName("a".repeat(40)))
 }
+
+class SafeTvNameTest {
+    @Test fun validUnchanged() = assertEquals("Living Room TV", safeTvName("  Living Room TV ", "Model"))
+    @Test fun longFallsBackToModel() = assertEquals("Model", safeTvName("a".repeat(60), "Model"))
+    @Test fun blankFallsBackToModel() = assertEquals("Model", safeTvName("   ", "Model"))
+    @Test fun bothInvalidTruncates() {
+        val out = safeTvName("a".repeat(60), "b".repeat(60))
+        assertTrue(isValidTvName(out))
+        assertEquals("b".repeat(40), out)
+    }
+    @Test fun truncatesByBytesWithoutSplittingCodePoints() {
+        val out = safeTvName("📺".repeat(30), "📺".repeat(30))
+        assertTrue(isValidTvName(out))
+        assertEquals("📺".repeat(12), out)
+    }
+}

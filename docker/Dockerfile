@@ -18,6 +18,9 @@ RUN mkdir -p $ANDROID_HOME/cmdline-tools \
     && $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-37.0" \
         "build-tools;36.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
 
+# root-run git on the bind-mounted repo would otherwise refuse with "dubious ownership"
+RUN git config --global --add safe.directory '*'
+
 COPY build.sh /usr/local/bin/airplay-build
 RUN chmod +x /usr/local/bin/airplay-build
 WORKDIR /work

@@ -46,7 +46,9 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 1. Leave the steps screen untouched for 60 seconds. Expected: it switches to the ambient screen.
 2. Press any remote key. Expected: it returns to the steps screen.
 3. On the ambient screen, press OK to wake it. Expected: the screen wakes and the rename dialog does NOT open.
-4. On the ambient screen, press Back. Expected: it returns to the steps screen. (On Android 16 and later the app may exit instead; that is system behaviour, note it if you see it.)
+4. On the ambient screen, press Back. Expected: it returns to the steps screen and the app does not exit.
+5. Leave the app on the ambient screen for longer than the TV's own screensaver timeout (check Settings, usually 5 to 15 minutes), then mirror from the iPhone. Expected: the TV is still listed, mirroring works, and the TV's screensaver never took over.
+6. On a TV that has its own built-in AirPlay or Google Cast receiver, check that this TV still appears in the iPhone's list under its name. If the steps screen instead shows "This TV can't be found right now. Close and reopen the app.", note it (the app could not start its server).
 
 ## 6. Rename
 

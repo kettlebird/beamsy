@@ -40,7 +40,7 @@ The build applies patches to the UxPlay submodule, so it shows as modified after
 The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the intended local route for a key-less build, but it has **not yet been verified on this machine** (Docker Desktop's engine would not start on the development PC). From the repo root (run in Git Bash on Windows):
 
 ```bash
-docker build -t screenmirroringtv-build docker && docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle -v android-keys:/root/.android screenmirroringtv-build :app:assembleDebug :unlock:assembleDebug
+docker build -t screenmirroringtv-build docker && MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle -v android-keys:/root/.android screenmirroringtv-build :app:assembleDebug :unlock:assembleDebug
 ```
 
 Gradle arguments after the image name are passed to `./gradlew` (default `:app:assembleDebug`). APKs are copied back to `app/build/outputs` and `unlock/build/outputs`. The container never sees your `local.properties`, so this route gives debug-signed builds (`app-debug.apk`, `unlock-debug.apk`). Always build both in the same run: the main app checks that the unlock app has the same signing certificate, and the `android-keys` volume keeps the debug keystore the same across runs. Debug APKs built on different machines, or without that volume, will not unlock. Signed release builds come from CI (below) or from a local build once the upload key exists (see Releasing).
