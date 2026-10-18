@@ -10,11 +10,12 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
    adb connect <tv-ip>:5555
    adb install -r app/build/outputs/apk/release/app-release.apk
    ```
-   Accept the "Allow debugging" prompt on the TV the first time. Use the debug APK (`app-debug.apk`) if you have no release build.
+   Accept the "Allow debugging" prompt on the TV the first time. Without an upload key your release APKs are unsigned and adb will refuse them, so use the debug APKs instead (`app/build/outputs/apk/debug/app-debug.apk` and `unlock/build/outputs/apk/debug/unlock-debug.apk`). Build both in the same run on the same machine (see the README): the unlock check compares signing certificates, and debug keys from different machines or fresh containers will not match.
 3. Install the unlock app later, when the checklist says so:
    ```
    adb install -r unlock/build/outputs/apk/release/unlock-release.apk
    ```
+   (or `unlock/build/outputs/apk/debug/unlock-debug.apk` for the debug route)
    Expected: `Success` for each install. The main app only recognises the unlock app when both are signed with the same key.
 
 ## 1. Basics

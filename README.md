@@ -37,13 +37,13 @@ The build applies patches to the UxPlay submodule, so it shows as modified after
 
 ### Docker (local build on Windows/macOS/Linux) - not yet verified on this machine
 
-The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the supported local route, but it has **not yet been verified on this machine** (Docker Desktop's engine would not start on the development PC). From the repo root:
+The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the intended local route for a key-less build, but it has **not yet been verified on this machine** (Docker Desktop's engine would not start on the development PC). From the repo root (run in Git Bash on Windows):
 
 ```bash
-docker build -t screenmirroringtv-build docker && docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle screenmirroringtv-build :app:assembleDebug :unlock:assembleRelease
+docker build -t screenmirroringtv-build docker && docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle -v android-keys:/root/.android screenmirroringtv-build :app:assembleDebug :unlock:assembleDebug
 ```
 
-Gradle arguments after the image name are passed to `./gradlew` (default `:app:assembleDebug`). APKs are copied back to `app/build/outputs` and `unlock/build/outputs`. The container never sees your `local.properties`, so this route gives debug or unsigned builds. Signed release builds come from CI (below).
+Gradle arguments after the image name are passed to `./gradlew` (default `:app:assembleDebug`). APKs are copied back to `app/build/outputs` and `unlock/build/outputs`. The container never sees your `local.properties`, so this route gives debug-signed builds (`app-debug.apk`, `unlock-debug.apk`). Always build both in the same run: the main app checks that the unlock app has the same signing certificate, and the `android-keys` volume keeps the debug keystore the same across runs. Debug APKs built on different machines, or without that volume, will not unlock. Signed release builds come from CI (below) or from a local build once the upload key exists (see Releasing).
 
 ### GitHub Actions
 
@@ -82,4 +82,6 @@ Outputs:
    ```
 
    The SHA-256 digests must match. (A release build made without signing settings is unsigned and has no certificate to compare.)
-5. Run the real-device checks in [`docs/on-device-checklist.md`](docs/on-device-checklist.md).
+5. Before the first upload, replace `TODO-REPLACE-WITH-OUR-REPO-URL` (this README and `fastlane/metadata/android/en-US/full_description.txt`) and the upstream `fastlane/metadata/android/en-US/images/icon.png`.
+6. In CI, the `LOCAL` secret's `storeFile` must be `../upload.jks` (the workflow writes the keystore to the repo root as `upload.jks`).
+7. Run the real-device checks in [`docs/on-device-checklist.md`](docs/on-device-checklist.md).

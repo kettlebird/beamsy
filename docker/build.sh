@@ -1,8 +1,8 @@
 #!/bin/bash
 # Build in a Linux-native copy of the repo mounted at /src (a Windows bind mount is slow and its local.properties points at the host SDK),
-# then copy the APKs back. Usage: airplay-build [gradle args, default: :app:assembleDebug]
+# then copy the APKs back. .git is copied too: the UxPlay patch step (applyUxplayPatches) runs git inside the submodule, whose .git pointer file needs the root .git/modules. Usage: airplay-build [gradle args, default: :app:assembleDebug]
 set -e
-rsync -a --delete --exclude=/.git --exclude=local.properties --exclude=/.gradle --exclude=/build --exclude=/app/build --exclude=/unlock/build --exclude=/app/.cxx --exclude=/.kotlin /src/ /work/
+rsync -a --delete --exclude=local.properties --exclude=/.gradle --exclude=/build --exclude=/app/build --exclude=/unlock/build --exclude=/app/.cxx --exclude=/.kotlin /src/ /work/
 echo "sdk.dir=$ANDROID_HOME" > /work/local.properties
 cd /work
 bash ./gradlew --no-daemon --console=plain "${@:-:app:assembleDebug}"
