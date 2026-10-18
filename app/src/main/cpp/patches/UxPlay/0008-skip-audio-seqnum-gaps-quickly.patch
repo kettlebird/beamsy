@@ -1,0 +1,35 @@
+diff --git a/lib/raop_buffer.c b/lib/raop_buffer.c
+index 45a3e4c..e84a496 100644
+--- a/lib/raop_buffer.c
++++ b/lib/raop_buffer.c
+@@ -34,6 +34,9 @@
+ #include "byteutils.h"
+ 
+ #define RAOP_BUFFER_LENGTH 256
++/* packets queued past a missing one before giving up on its resend; ~90ms at 480 samples per
++ * packet, inside the ~150ms lead iOS mirroring audio arrives with */
++#define RAOP_RESEND_WAIT 8
+ 
+ typedef struct {
+     /* Data available */
+@@ -242,12 +245,17 @@ raop_buffer_dequeue(raop_buffer_t *raop_buffer, unsigned int *length, uint32_t *
+     if (no_resend) {
+         /* If we do no resends, always return the first entry */
+     } else if (!entry->filled) {
+-        /* Check how much we have space left in the buffer */
+-        if (entry_count < RAOP_BUFFER_LENGTH) {
++        /* Wait briefly for a resend. iOS skips seqnums on purpose when sound pauses, and
++         * waiting for those (formerly until the buffer filled, ~2.8s) held the next sound back */
++        if (entry_count < RAOP_RESEND_WAIT) {
+             /* Return nothing and hope resend gets on time */
+             return NULL;
+         }
+-        /* Risk of buffer overrun, return empty buffer */
++        /* Give up on the whole gap at once */
++        while (!entry->filled && seqnum_cmp(raop_buffer->first_seqnum, raop_buffer->last_seqnum) < 0) {
++            raop_buffer->first_seqnum += 1;
++            entry = &raop_buffer->entries[raop_buffer->first_seqnum % RAOP_BUFFER_LENGTH];
++        }
+     }
+ 
+     /* Update buffer and validate entry */
