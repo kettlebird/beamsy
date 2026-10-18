@@ -131,6 +131,9 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
     private val _audioOnly = MutableStateFlow(false)
     val audioOnly: StateFlow<Boolean> = _audioOnly.asStateFlow()
 
+    private val _senderName = MutableStateFlow("")
+    val senderName: StateFlow<String> = _senderName.asStateFlow()
+
     private val _videoPlaybackActive = MutableStateFlow(false)
     val videoPlaybackActive: StateFlow<Boolean> = _videoPlaybackActive.asStateFlow()
 
@@ -383,6 +386,7 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
             _videoAspect.value = it.videoAspect.value
             _videoResolution.value = it.videoResolution.value
             _audioOnly.value = it.audioOnly.value
+            _senderName.value = it.senderName.value
             val videoActive = it.videoPlaybackActive.value
             val playSeq = it.videoPlaySeq.value
             if (playSeq != _lastVideoPlaySeq) {

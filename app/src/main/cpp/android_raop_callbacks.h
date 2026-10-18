@@ -21,6 +21,7 @@ typedef struct {
     jmethodID on_client_volume;
     jmethodID on_audio_teardown;
     jmethodID on_conn_init;
+    jmethodID on_client_request;
     jmethodID on_conn_destroy;
     jmethodID on_conn_reset;
     jmethodID on_display_pin;

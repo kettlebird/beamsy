@@ -114,6 +114,9 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private val _audioOnly = MutableStateFlow(false)
     val audioOnly = _audioOnly.asStateFlow()
 
+    private val _senderName = MutableStateFlow("")
+    val senderName = _senderName.asStateFlow()
+
     private val _videoPlaybackActive = MutableStateFlow(false)
     val videoPlaybackActive = _videoPlaybackActive.asStateFlow()
 
@@ -767,9 +770,14 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         launchMainActivity()
     }
 
+    override fun onClientRequest(name: String) {
+        _senderName.value = name
+    }
+
     override fun onConnectionDestroy() {
         _connectionCount.value = (_connectionCount.value - 1).coerceAtLeast(0)
         if (_connectionCount.value == 0) {
+            _senderName.value = ""
             // clients may drop without POST /stop; must run before the poll-state reset
             _endVideoPlayback("AirPlay Video stopped (disconnect)")
             // last client gone: release audio output devices to save power

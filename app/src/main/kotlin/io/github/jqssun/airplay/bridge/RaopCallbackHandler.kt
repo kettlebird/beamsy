@@ -9,6 +9,8 @@ interface RaopCallbackHandler {
     fun onAudioTeardown()
     fun onConnectionInit()
     fun onConnectionDestroy()
+    // sender device name from the first SETUP; empty if the sender did not provide one
+    fun onClientRequest(name: String)
     fun onConnectionReset(reason: Int)
     fun onDisplayPin(pin: String)
     fun onMetadata(data: ByteArray)

@@ -56,6 +56,7 @@ void android_callbacks_init(android_callback_ctx_t *ctx, JNIEnv *env, jobject ca
     ctx->on_client_volume = (*env)->GetMethodID(env, cls, "onClientVolume", "()F");
     ctx->on_audio_teardown = (*env)->GetMethodID(env, cls, "onAudioTeardown", "()V");
     ctx->on_conn_init = (*env)->GetMethodID(env, cls, "onConnectionInit", "()V");
+    ctx->on_client_request = (*env)->GetMethodID(env, cls, "onClientRequest", "(Ljava/lang/String;)V");
     ctx->on_conn_destroy = (*env)->GetMethodID(env, cls, "onConnectionDestroy", "()V");
     ctx->on_conn_reset = (*env)->GetMethodID(env, cls, "onConnectionReset", "(I)V");
     ctx->on_display_pin = (*env)->GetMethodID(env, cls, "onDisplayPin", "(Ljava/lang/String;)V");
@@ -140,6 +141,18 @@ static void _conn_init(void *cls) {
     JNIEnv *env = _get_env(ctx);
     if (!env) return;
     (*env)->CallVoidMethod(env, ctx->callback_obj, ctx->on_conn_init);
+}
+
+/* fires from the first SETUP of a session; only reports the sender's name, never vetoes (*admit untouched) */
+static void _report_client_request(void *cls, char *deviceid, char *model, char *name, bool *admit) {
+    android_callback_ctx_t *ctx = (android_callback_ctx_t *)cls;
+    (void)deviceid; (void)model; (void)admit;
+    JNIEnv *env = _get_env(ctx);
+    if (!env) return;
+    jstring jname = (*env)->NewStringUTF(env, name ? name : "");
+    if (!jname) { (*env)->ExceptionClear(env); return; }
+    (*env)->CallVoidMethod(env, ctx->callback_obj, ctx->on_client_request, jname);
+    (*env)->DeleteLocalRef(env, jname);
 }
 
 static void _conn_destroy(void *cls) {
@@ -395,6 +408,7 @@ void android_callbacks_fill(raop_callbacks_t *cbs, android_callback_ctx_t *ctx) 
     cbs->conn_reset = _conn_reset;
     cbs->video_reset = _video_reset;
     cbs->conn_init = _conn_init;
+    cbs->report_client_request = _report_client_request;
     cbs->conn_destroy = _conn_destroy;
     cbs->audio_flush = _audio_flush;
     cbs->video_flush = _video_flush;
