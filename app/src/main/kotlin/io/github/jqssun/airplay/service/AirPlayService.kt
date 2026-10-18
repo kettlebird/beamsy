@@ -457,7 +457,10 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
         val services = buildList {
             if (advertiseAudio) add(MdnsService(raopName, "_raop._tcp", port, raopTxt))
-            add(MdnsService(resolvedName, "_airplay._tcp", port, airplayTxt))
+            // Android TV's remote service already advertises the device name, and Android 14's mDNS
+            // rejects a second instance with that name even of another type; a zero-width space
+            // makes ours distinct while iPhones still show the same name
+            add(MdnsService(resolvedName + "​", "_airplay._tcp", port, airplayTxt))
         }
         if (prefs[Prefs.USB_ONLY]) {
             usbAdvertiser = UsbMdnsAdvertiser(services) { iface, addr ->
