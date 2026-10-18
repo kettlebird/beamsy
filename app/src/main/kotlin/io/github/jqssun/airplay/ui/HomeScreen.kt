@@ -112,6 +112,7 @@ fun HomeScreen(
 
     // nothing else is focusable outside the steps screen; the root catches the remote there
     val rootFocus = remember { FocusRequester() }
+    var swallowUp by remember { mutableStateOf(false) }
     LaunchedEffect(mode) { if (mode != HomeMode.STEPS) rootFocus.requestFocusUntilLanded() }
 
     Box(
@@ -119,9 +120,15 @@ fun HomeScreen(
             .fillMaxSize()
             .background(Color.Black)
             .onPreviewKeyEvent {
-                if (it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                if (it.type != KeyEventType.KeyDown) {
+                    // the wake press's key-up would otherwise click the newly focused "Rename TV"
+                    return@onPreviewKeyEvent swallowUp.also { swallowUp = false }
+                }
                 lastInteraction = System.currentTimeMillis()
-                mode == HomeMode.AMBIENT // a press only wakes the ambient screen, e.g. Back must not exit
+                // a press only wakes the ambient screen, e.g. Back must not exit
+                val wake = mode == HomeMode.AMBIENT
+                if (wake) swallowUp = true
+                wake
             }
             .focusRequester(rootFocus)
             .focusable()
