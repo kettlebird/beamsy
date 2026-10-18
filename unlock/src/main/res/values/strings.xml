@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Screen Mirroring TV Full HD Unlock</string>
-    <string name="unlocked_body">Full HD is unlocked. Open Screen Mirroring TV to use it.</string>
-    <string name="open_main">Open Screen Mirroring TV</string>
+    <string name="app_name">Beamsy Full HD Unlock</string>
+    <string name="unlocked_body">Full HD is unlocked. Open Beamsy to use it.</string>
+    <string name="open_main">Open Beamsy</string>
 </resources>

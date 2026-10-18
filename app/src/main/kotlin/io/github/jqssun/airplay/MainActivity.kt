@@ -144,8 +144,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // foreground only: leaving the app closes sessions, even mid-session
-        if (!isChangingConfigurations) viewModel.stopServer()
+        if (isChangingConfigurations) return
+        // leaving the app closes sessions, even mid-session; the server itself stays up only
+        // for "Start Beamsy when the TV turns on", so iPhones keep finding the TV
+        if (viewModel.pref(Prefs.BOOT_AUTO_START).value) viewModel.endSessions() else viewModel.stopServer()
     }
 
     override fun onDestroy() {

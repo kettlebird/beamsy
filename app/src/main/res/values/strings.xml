@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Screen Mirroring TV</string>
+    <string name="app_name">Beamsy</string>
 
     <!-- Notification -->
     <string name="notification_channel">Screen Mirroring</string>
-    <string name="notification_title">Screen Mirroring TV is on</string>
+    <string name="notification_title">Beamsy is on</string>
     <string name="notification_text">Accepting AirPlay connections</string>
     <string name="notification_pin_title">AirPlay PIN Required</string>
     <string name="notification_pin_text">PIN: %1$s</string>

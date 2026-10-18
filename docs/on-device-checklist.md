@@ -56,6 +56,11 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 2. Open the dialog again and clear the name to blank. Expected: Save is disabled.
 3. Rename to a 40-character name, then set the TV's font size to Large (or the largest) in accessibility settings. Expected: the steps screen and dialog still fit, with no clipped or overlapping text.
 4. Mirror with the iPhone upright. Expected: the sides show a soft, dimmed blur of the picture, with no visible blocks, and motion stays smooth. Turn "Blurred sides for upright iPhone" Off in Settings and mirror again. Expected: the sides are plain black.
+5. Turn on "Start Beamsy when the TV turns on", then restart the TV and don't open the app. Expected: the iPhone lists the TV within about a minute of the TV's home screen appearing. Then open Beamsy, mirror, and press Home. Expected: mirroring stops, but the iPhone still lists the TV. With the setting off, leaving the app removes the TV from the list.
+6. Turn on "Open when an iPhone connects", leave the app (Home button), then mirror. Expected: the app comes to the front and shows the picture. If it stays in the background, the TV blocks apps from opening themselves; report it.
+7. Turn on "Ask for a code before mirroring", then mirror. Expected: the TV shows a large 4-digit code, the iPhone asks for it, and after you type it mirroring starts and the code disappears.
+8. Turn on "Let another iPhone take over". While one iPhone mirrors, mirror from a second one. Expected: the second iPhone replaces the first. With it off, the second iPhone is refused.
+9. Turn on "Shrink picture to fit the screen" on a TV that cuts off the edges. Expected: the iPhone's whole screen, including the status bar, is visible.
 
 ## 7. First run
 

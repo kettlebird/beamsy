@@ -23,11 +23,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -58,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import io.github.jqssun.airplay.BoolPref
 import io.github.jqssun.airplay.Prefs
 import io.github.jqssun.airplay.R
 import io.github.jqssun.airplay.isUnlocked
@@ -90,7 +95,7 @@ fun HomeScreen(
     val localNetwork by viewModel.localNetwork.collectAsState()
     val serverState by viewModel.serverState.collectAsState()
     val savedName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
-    val blurBars by viewModel.pref(Prefs.BLUR_BARS).collectAsState()
+    val pin by viewModel.pinCode.collectAsState()
     val prefs = remember { context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
     val name = remember(savedName) { context.tvName(prefs) }
     val timeFormat = remember { DateFormat.getTimeFormat(context) }
@@ -196,13 +201,16 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
+        pin?.let { PinCode(it) }
     }
 
     if (settingsOpen) {
         SettingsDialog(
-            blurBars = blurBars,
-            onBlurBars = { viewModel.set(Prefs.BLUR_BARS, it) },
+            viewModel = viewModel,
+            name = name,
+            unlocked = unlocked,
             onRename = { settingsOpen = false; renaming = true },
+            onUnlock = { runCatching { openUnlockListing(context) } },
             onDismiss = { settingsOpen = false; lastInteraction = System.currentTimeMillis() }
         )
     }
@@ -232,16 +240,16 @@ private fun Steps(
     LaunchedEffect(Unit) { settingsFocus.requestFocusUntilLanded() }
 
     Box(Modifier.fillMaxSize()) {
-        Text(clock, Modifier.align(Alignment.TopEnd), color = InkSoft, fontSize = 22.sp)
+        Text(clock, Modifier.align(Alignment.TopEnd), color = InkSoft, fontSize = 32.sp, fontWeight = FontWeight.Medium)
 
         Row(
             Modifier.fillMaxSize().padding(top = 24.dp, bottom = 56.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f).padding(end = 32.dp)) {
-                Text("This TV is called", color = InkSoft, fontSize = 20.sp)
+                Text("This TV is called", color = InkSoft, fontSize = 20.sp, fontWeight = FontWeight.Medium)
                 Text(
-                    name, color = Ink, fontSize = 52.sp, fontWeight = FontWeight.Light,
+                    name, color = Ink, fontSize = 52.sp, fontWeight = FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(36.dp))
@@ -330,7 +338,7 @@ private fun HomeButton(text: String, onClick: () -> Unit, modifier: Modifier = M
 @Composable
 private fun Ambient(name: String, clock: String, hint: String) {
     Box(Modifier.fillMaxSize()) {
-        Text(clock, Modifier.align(Alignment.TopStart), color = Ink, fontSize = 96.sp, fontWeight = FontWeight.Light)
+        Text(clock, Modifier.align(Alignment.TopStart), color = Ink, fontSize = 96.sp, fontWeight = FontWeight.Medium)
         Column(Modifier.align(Alignment.BottomStart)) {
             Text(name, color = Ink, fontSize = 34.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(hint, color = InkSoft, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -339,7 +347,14 @@ private fun Ambient(name: String, clock: String, hint: String) {
 }
 
 @Composable
-private fun SettingsDialog(blurBars: Boolean, onBlurBars: (Boolean) -> Unit, onRename: () -> Unit, onDismiss: () -> Unit) {
+private fun SettingsDialog(
+    viewModel: MainViewModel,
+    name: String,
+    unlocked: Boolean,
+    onRename: () -> Unit,
+    onUnlock: () -> Unit,
+    onDismiss: () -> Unit
+) {
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstFocus.requestFocusUntilLanded() }
 
@@ -347,19 +362,61 @@ private fun SettingsDialog(blurBars: Boolean, onBlurBars: (Boolean) -> Unit, onR
         onDismissRequest = onDismiss,
         title = { Text("Settings") },
         text = {
-            Column {
-                TextButton(onClick = onRename, modifier = Modifier.focusRequester(firstFocus).dpadFocus()) {
-                    Text("Rename TV")
-                }
-                TextButton(onClick = { onBlurBars(!blurBars) }, modifier = Modifier.dpadFocus()) {
-                    Text("Blurred sides for upright iPhone: ${if (blurBars) "On" else "Off"}")
-                }
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                SettingsSection("This TV")
+                ValueRow("TV name", name, onRename, Modifier.focusRequester(firstFocus))
+                PrefToggle(viewModel, "Start Beamsy when the TV turns on", Prefs.BOOT_AUTO_START)
+                PrefToggle(viewModel, "Open when an iPhone connects", Prefs.LAUNCH_ON_CONNECT)
+                SettingsSection("Picture")
+                if (unlocked) ValueRow("Picture quality", "Full HD", onClick = {})
+                else ValueRow("Picture quality", "720p · Get Full HD", onUnlock)
+                PrefToggle(viewModel, "Blurred sides for upright iPhone", Prefs.BLUR_BARS)
+                PrefToggle(viewModel, "Shrink picture to fit the screen", Prefs.OVERSCANNED)
+                SettingsSection("Privacy")
+                PrefToggle(viewModel, "Ask for a code before mirroring", Prefs.REQUIRE_PIN)
+                PrefToggle(viewModel, "Let another iPhone take over", Prefs.ALLOW_NEW_CONN)
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss, modifier = Modifier.dpadFocus()) { Text("Done") }
         }
     )
+}
+
+@Composable
+private fun SettingsSection(title: String) {
+    Text(
+        title, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun ValueRow(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    TextButton(onClick = onClick, modifier = modifier.fillMaxWidth().dpadFocus()) {
+        Text(label, Modifier.weight(1f))
+        Text(value)
+    }
+}
+
+@Composable
+private fun PrefToggle(viewModel: MainViewModel, label: String, pref: BoolPref) {
+    val on by viewModel.pref(pref).collectAsState()
+    TextButton(onClick = { viewModel.set(pref, !on) }, modifier = Modifier.fillMaxWidth().dpadFocus()) {
+        Text(label, Modifier.weight(1f))
+        Switch(checked = on, onCheckedChange = null) // the row takes the click and the d-pad focus
+    }
+}
+
+// the iPhone asks for this code when "Ask for a code before mirroring" is on
+@Composable
+private fun PinCode(pin: String) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.75f)), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Enter this code on your iPhone", color = InkSoft, fontSize = 28.sp, fontWeight = FontWeight.Medium)
+            Text(pin, color = Ink, fontSize = 120.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 12.sp)
+        }
+    }
 }
 
 @Composable

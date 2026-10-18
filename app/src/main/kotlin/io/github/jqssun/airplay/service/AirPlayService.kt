@@ -541,6 +541,11 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         stopSelf()
     }
 
+    // leaving the app with start-on-boot on: nothing plays unseen, but iPhones still list the TV
+    fun endSessions() {
+        if (_connectionCount.value > 0) _restartServer()
+    }
+
     private fun _restartServer() {
         if (_serverState.value != ServerState.RUNNING) return
         _shutdown()
@@ -826,6 +831,8 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _lastPin = pin
         pinCallback?.invoke(pin)
         _updateMediaNotification()
+        // onConnectionInit skips the launch for pin sessions; the code has to be on screen
+        if (shouldLaunchOnConnect()) launchMainActivity()
     }
 
     override fun onMetadata(data: ByteArray) {
