@@ -35,9 +35,9 @@ git submodule update --init --recursive
 
 The build applies patches to the UxPlay submodule, so it shows as modified afterwards. Never commit or reset it.
 
-### Docker (local build on Windows/macOS/Linux) - not yet verified on this machine
+### Docker (local build on Windows/macOS/Linux)
 
-The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the intended local route for a key-less build, but it has **not yet been verified on this machine** (Docker Desktop's engine would not start on the development PC). From the repo root (run in Git Bash on Windows):
+The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the local route for a key-less build. Verified on Windows 11 with Docker Desktop 29.8.1 (2026-10-18): the debug build of both apps takes about 5 minutes the first time, and `:app:assembleRelease :unlock:assembleRelease` (unsigned, R8) about 3. From the repo root (run in Git Bash on Windows):
 
 ```bash
 docker build -t screenmirroringtv-build docker && MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle -v android-keys:/root/.android screenmirroringtv-build :app:assembleDebug :unlock:assembleDebug
