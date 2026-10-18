@@ -1,1 +1,1 @@
-AirPlay receiver implementation for Android with video and audio support.
+Mirror your iPhone to your TV. No ads. No subscription.

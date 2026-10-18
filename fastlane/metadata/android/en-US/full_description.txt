@@ -1,12 +1,27 @@
-- Screen mirroring with H.264 and H.265 (HEVC) video decoding
-- Audio streaming with AAC-ELD, AAC-LC and ALAC audio decoding
-- Video playback with support for HLS, downloads, and remote controls
-- Music playback with track information, cover art, and remote controls
-- Support for Android TV with directional pad navigation and seeking controls
-- Support for Picture-in-Picture, automatic resolution and mode switching
-- Optional PIN authentication
-- Video resolution, overscan, and frame rate control
-- Audio latency control and support for software decoder fallback
-- Debug overlay with real-time statistics (FPS, bitrate, codec, resolution, frame count, audio volume, etc.)
-- Android native media session integration with notification controls
-- Wired secondary display over USB tethering
+Mirror your iPhone to your Android TV. No ads. No subscription. No time limit.
+
+Open the app on your TV, then pick your TV from Screen Mirroring in your iPhone's Control Center. The app is AirPlay-compatible, so there is nothing to install on the iPhone. Your screen and sound show up on the TV.
+
+FREE
+- Mirrors at up to 720p, with sound
+- No time limit, no ads, no account
+- Music and other audio-only playback shows what is playing
+
+FULL HD (OPTIONAL)
+- Install the separate "Screen Mirroring TV Full HD Unlock" app for 1080p mirroring
+- $6.99, paid once. It is a one-time purchase, not a subscription
+
+GOOD TO KNOW
+- It works while the app is open on your TV
+- One iPhone at a time
+- iPhone only for now; Android phones are planned
+- You can rename your TV so it is easy to spot in the list
+- Your TV and iPhone must be on the same Wi-Fi or network
+- Protected video (for example from some streaming apps) cannot be mirrored
+
+OPEN SOURCE
+This app is free software under the GPL-3.0 and is built on UxPlay and jqssun/android-airplay-server.
+Source code: https://github.com/jqssun/android-airplay-server (upstream)
+Source for this app: TODO-REPLACE-WITH-OUR-REPO-URL
+
+Not affiliated with Apple Inc.

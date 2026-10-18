@@ -1,93 +1,85 @@
-# AirPlay Receiver for Android
+# Screen Mirroring TV
 
-[![Stars](https://img.shields.io/github/stars/jqssun/android-airplay-server)](https://github.com/jqssun/android-airplay-server)
-[![GitHub](https://img.shields.io/github/downloads/jqssun/android-airplay-server/total?label=GitHub&logo=GitHub)](https://github.com/jqssun/android-airplay-server/releases)
-[![license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/jqssun/android-airplay-server/blob/main/LICENSE)
-[![build](https://img.shields.io/github/actions/workflow/status/jqssun/android-airplay-server/apk.yml?label=build)](https://github.com/jqssun/android-airplay-server/actions/workflows/apk.yml)
-[![release](https://img.shields.io/github/v/release/jqssun/android-airplay-server)](https://github.com/jqssun/android-airplay-server/releases)
+Mirror your iPhone to your Android TV. No ads. No subscription. No time limit.
 
-A fully featured free and open-source implementation of AirPlay for Android that turns your device into an AirPlay-compatible display and speaker, based on [UxPlay](https://github.com/FDH2/UxPlay). It is the first open-source AirPlay 2 receiver for Android and Android TV, and works with iOS/iPadOS, macOS devices as well as other sender implementations.
+Open the app on the TV, then pick the TV in Screen Mirroring on the iPhone. The app speaks the AirPlay protocol, so nothing is installed on the iPhone.
 
-[<img height="48" alt="Get it on Google Play" src="https://jqssun.github.io/images/badges/google-play-store.svg">](https://play.google.com/store/apps/details?id=io.github.jqssun.airplay)
-[<img height="48" alt="Get it on F-Droid" src="https://jqssun.github.io/images/badges/fdroid.svg">](https://f-droid.org/packages/io.github.jqssun.airplay)
-[<img height="48" alt="Get it on GitHub" src="https://jqssun.github.io/images/badges/github.svg">](https://github.com/jqssun/android-airplay-server/releases/latest)
+- **Free:** mirroring up to 720p with sound, one iPhone at a time, no ads, no time limit.
+- **Full HD:** 1080p comes from a separate paid app, "Screen Mirroring TV Full HD Unlock" (`com.screenmirroringtv.unlock`), **$6.99, paid once** (a one-time purchase, not a subscription). The main app checks that the unlock app is installed and signed with the same certificate.
+- Works while the app is open on the TV. iPhone only for now; Android phones are planned.
 
-<video loop src='https://github.com/user-attachments/assets/79ed7c0c-0102-43cc-8816-4f00ce6a4199' alt="demo" width="200" style="display: block; margin: auto;"></video>
+## Two Gradle modules
 
-## Compatibility
+| Module | applicationId | What it is |
+| --- | --- | --- |
+| `:app` | `com.screenmirroringtv.app` | The receiver (free, 720p) |
+| `:unlock` | `com.screenmirroringtv.unlock` | The one-time "Full HD Unlock" key app (no native code) |
 
-- Android 7.0+, including Android TV
-- AirPlay devices on the same subnet, including iOS/iPadOS, macOS devices, or other sender implementations
+## Based on
 
-## Features
+This is a GPL-3.0 fork of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), which is built on [UxPlay](https://github.com/FDH2/UxPlay) (also GPL-3.0). The upstream `LICENSE` is kept, and this project is released under the same licence. Source for this app: `TODO-REPLACE-WITH-OUR-REPO-URL`.
 
-- Screen mirroring with H.264 and H.265 (HEVC) video decoding
-- Audio streaming with AAC-ELD, AAC-LC and ALAC audio decoding
-- Video playback with support for HLS, downloads, and remote controls
-- Music playback with track information, cover art, and remote controls
-- Support for Android TV with directional pad navigation and seeking controls
-- Support for Picture-in-Picture, automatic resolution and mode switching
-- Optional PIN authentication
-- Video resolution, overscan, and frame rate control
-- Audio latency control and support for software decoder fallback
-- Debug overlay with real-time statistics (FPS, bitrate, codec, resolution, frame count, audio volume, etc.)
-- Android native media session integration with notification controls
-- Wired secondary display for macOS/iPadOS devices over USB tethering
+Also used, as in upstream: [FFmpeg](https://ffmpeg.org) (lossless audio decoder) and [Next Player](https://github.com/anilbeesetti/nextplayer) (video player).
 
-> [!WARNING]
-> DRM content (e.g. from the Apple TV application) is not supported.
+Not affiliated with Apple Inc.
 
-## Configure from ADB
+## Building
 
-On devices without a display, settings can also be changed over ADB. The receiver is protected by `android.permission.DUMP` so regular installed apps cannot change them. Values are passed as text using `--es`. Using `adb shell`:
+The native part (OpenSSL and FFmpeg, via CMake under [`app/src/main/cpp`](app/src/main/cpp)) needs a Linux toolchain. It cannot be built on a plain Windows host.
 
-```bash
-export KEY="server_name" VALUE="Speaker"
-am broadcast -n io.github.jqssun.airplay/.SettingsReceiver -a io.github.jqssun.airplay.SET_SETTING --es key "$KEY" --es value "$VALUE"
-```
-
-To list all settings with their current values as JSON:
-
-```bash
-am start -n io.github.jqssun.airplay/.MainActivity
-am broadcast -n io.github.jqssun.airplay/.SettingsReceiver -a io.github.jqssun.airplay.LIST_SETTINGS
-```
-
-## Implementation
-
-This application uses the C-based [UxPlay](https://github.com/FDH2/UxPlay) library to implement the AirPlay/RAOP protocol, with a JNI bridge to the Android application layer. Audio can be decoded via MediaCodec or a software ALAC decoder, while mirroring video is decoded via MediaCodec and rendered to a SurfaceView. HLS sessions are served through a local playlist proxy.
-
-When using USB tethering, the Android device can act as a reliable secondary display over a wired connection. Apple devices natively support USB tethering over CDC-NCM, so on Android devices that default to RNDIS, you may need to switch to CDC-NCM over ADB:
-
-```bash
-adb shell settings put global tether_force_usb_functions 1
-```
-
-```mermaid
-flowchart LR
-    AppleDevice["Apple Device (Sender)"]
-    UxPlay["UxPlay (C/JNI)<br/>RAOP + mDNS<br/>FairPlay + HLS"]
-    AndroidApp["Android (Receiver)<br/>MediaCodec + AudioTrack<br/>ExoPlayer (HLS)"]
-
-    AppleDevice -- "RAOP / HLS" --> UxPlay
-    UxPlay --> AndroidApp
-```
-
-CMake is used for native C/C++ components under [`app/src/main/cpp`](app/src/main/cpp). Submodules must be initialized before building. 
+Initialise the submodules first:
 
 ```bash
 git submodule update --init --recursive
-./gradlew assembleDebug
 ```
 
-Check out the [CI](https://github.com/jqssun/android-airplay-server/blob/main/.github/workflows/apk.yml) for more details on reproducible builds.
+The build applies patches to the UxPlay submodule, so it shows as modified afterwards. Never commit or reset it.
 
-## Credits
+### Docker (local build on Windows/macOS/Linux) - not yet verified on this machine
 
-- [UxPlay](https://github.com/FDH2/UxPlay) for the AirPlay/RAOP server implementation
-- [FFmpeg](https://ffmpeg.org) for the lossless audio decoder
-- [Next Player](https://github.com/anilbeesetti/nextplayer) for the video player
+The [`docker/`](docker) folder holds a Linux build image (JDK 21, Android SDK/NDK/CMake). This is the supported local route, but it has **not yet been verified on this machine** (Docker Desktop's engine would not start on the development PC). From the repo root:
 
----
+```bash
+docker build -t screenmirroringtv-build docker && docker run --rm -v "$PWD":/src -v gradle-cache:/root/.gradle screenmirroringtv-build :app:assembleDebug :unlock:assembleRelease
+```
 
-Disclaimer: This project is not affiliated with Apple Inc.
+Gradle arguments after the image name are passed to `./gradlew` (default `:app:assembleDebug`). APKs are copied back to `app/build/outputs` and `unlock/build/outputs`. The container never sees your `local.properties`, so this route gives debug or unsigned builds. Signed release builds come from CI (below).
+
+### GitHub Actions
+
+[`.github/workflows/apk.yml`](.github/workflows/apk.yml) builds signed release APKs and AABs for both modules and attaches them to a GitHub release. It runs on `release/**` branches, `v*.*.*` tags, or manually. It needs two repository secrets (upstream's pattern): `STORE` (base64 of the upload keystore) and `LOCAL` (base64 of a `local.properties` with the signing settings).
+
+Outputs:
+
+- `app/build/outputs/apk/release/app-release.apk` and `app/build/outputs/bundle/release/app-release.aab`
+- `unlock/build/outputs/apk/release/unlock-release.apk` and `unlock/build/outputs/bundle/release/unlock-release.aab`
+
+### Unit tests
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+## Releasing
+
+1. **Confirm the final app name and both applicationIds before the first upload.** An applicationId can never change once published.
+2. **Create one upload key and use it for both apps.** Put its settings in `local.properties` (never commit it; `*.jks` and `local.properties` are git-ignored):
+
+   ```properties
+   storeFile=../upload.jks
+   storePassword=...
+   keyAlias=...
+   keyPassword=...
+   ```
+
+   `storeFile` is resolved from each module's folder, so `../upload.jks` works for both `:app` and `:unlock`.
+3. **Play Console:** enable Play App Signing for the unlock app and choose "use the same app signing key as another app" (the main app). Otherwise Google signs the two apps with different keys and the unlock check always fails.
+4. **Verify both APKs carry the same certificate:**
+
+   ```bash
+   apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+   apksigner verify --print-certs unlock/build/outputs/apk/release/unlock-release.apk
+   ```
+
+   The SHA-256 digests must match. (A release build made without signing settings is unsigned and has no certificate to compare.)
+5. Run the real-device checks in [`docs/on-device-checklist.md`](docs/on-device-checklist.md).
