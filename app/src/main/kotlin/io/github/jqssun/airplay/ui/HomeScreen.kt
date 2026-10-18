@@ -82,10 +82,10 @@ fun HomeScreen(
     val audioOnly by viewModel.audioOnly.collectAsState()
     val connections by viewModel.connectionCount.collectAsState()
     val sender by viewModel.senderName.collectAsState()
-    val aspect by viewModel.videoAspect.collectAsState()
     val localNetwork by viewModel.localNetwork.collectAsState()
     val serverState by viewModel.serverState.collectAsState()
     val savedName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
+    val blurBars by viewModel.pref(Prefs.BLUR_BARS).collectAsState()
     val prefs = remember { context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
     val name = remember(savedName) { context.tvName(prefs) }
     val timeFormat = remember { DateFormat.getTimeFormat(context) }
@@ -93,6 +93,7 @@ fun HomeScreen(
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var lastInteraction by remember { mutableLongStateOf(now) }
     var lastDisconnect by remember { mutableLongStateOf(now) }
+    var settingsOpen by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var unlocked by remember { mutableStateOf(false) }
 
@@ -109,7 +110,7 @@ fun HomeScreen(
         onPauseOrDispose { }
     }
 
-    val idle = if (connections > 0 || renaming) 0L else now - maxOf(lastInteraction, lastDisconnect)
+    val idle = if (connections > 0 || renaming || settingsOpen) 0L else now - maxOf(lastInteraction, lastDisconnect)
     val mode = homeMode(mirroring, audioOnly, idle)
     val clock = timeFormat.format(Date(now))
 
@@ -127,7 +128,7 @@ fun HomeScreen(
             .background(Color.Black)
             .onPreviewKeyEvent {
                 if (it.type != KeyEventType.KeyDown) {
-                    // the wake press's key-up would otherwise click the newly focused "Rename TV"
+                    // the wake press's key-up would otherwise click the newly focused "Settings"
                     return@onPreviewKeyEvent swallowUp.also { swallowUp = false }
                 }
                 lastInteraction = System.currentTimeMillis()
@@ -143,8 +144,9 @@ fun HomeScreen(
         VideoSurfaceView(
             onSurfaceAvailable = onSurfaceAvailable,
             onSurfaceDestroyed = onSurfaceDestroyed,
-            aspectRatio = aspect,
-            modifier = Modifier.align(Alignment.Center).alpha(if (mode == HomeMode.MIRROR) 1f else 0f)
+            // full screen: VideoPipeline fits the video and fills the bars with a blurred copy
+            applyAspectRatio = false,
+            modifier = Modifier.fillMaxSize().alpha(if (mode == HomeMode.MIRROR) 1f else 0f)
         )
         Crossfade(targetState = mode, label = "home") { m ->
             if (m == HomeMode.MIRROR) return@Crossfade
@@ -164,13 +166,22 @@ fun HomeScreen(
                         localNetwork = localNetwork,
                         onLocalNetwork = onLocalNetwork,
                         onUnlock = { runCatching { openUnlockListing(context) } }, // no store or browser on some TVs
-                        onRename = { renaming = true }
+                        onSettings = { settingsOpen = true }
                     )
                     HomeMode.AUDIO -> Ambient(name, clock, "Playing audio from ${sender.ifEmpty { "your iPhone" }}")
                     else -> Ambient(name, clock, "Screen Mirroring on your iPhone to connect")
                 }
             }
         }
+    }
+
+    if (settingsOpen) {
+        SettingsDialog(
+            blurBars = blurBars,
+            onBlurBars = { viewModel.set(Prefs.BLUR_BARS, it) },
+            onRename = { settingsOpen = false; renaming = true },
+            onDismiss = { settingsOpen = false; lastInteraction = System.currentTimeMillis() }
+        )
     }
 
     if (renaming) {
@@ -191,10 +202,10 @@ private fun Steps(
     localNetwork: LocalNetworkAccess,
     onLocalNetwork: () -> Unit,
     onUnlock: () -> Unit,
-    onRename: () -> Unit
+    onSettings: () -> Unit
 ) {
-    val renameFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { renameFocus.requestFocusUntilLanded() }
+    val settingsFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { settingsFocus.requestFocusUntilLanded() }
 
     Box(Modifier.fillMaxSize()) {
         Text(clock, Modifier.align(Alignment.TopEnd), color = InkSoft, fontSize = 22.sp)
@@ -251,7 +262,7 @@ private fun Steps(
         ) {
             if (unlocked) Text("Full HD · unlocked", color = InkSoft, fontSize = 16.sp)
             else HomeButton("Free · 720p · Full HD: get the Unlock app, \$6.99 once", onClick = onUnlock)
-            HomeButton("Rename TV", onClick = onRename, modifier = Modifier.focusRequester(renameFocus))
+            HomeButton("Settings", onClick = onSettings, modifier = Modifier.focusRequester(settingsFocus))
         }
     }
 }
@@ -274,6 +285,30 @@ private fun Ambient(name: String, clock: String, hint: String) {
             Text(hint, color = InkSoft, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
+}
+
+@Composable
+private fun SettingsDialog(blurBars: Boolean, onBlurBars: (Boolean) -> Unit, onRename: () -> Unit, onDismiss: () -> Unit) {
+    val firstFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { firstFocus.requestFocusUntilLanded() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Settings") },
+        text = {
+            Column {
+                TextButton(onClick = onRename, modifier = Modifier.focusRequester(firstFocus).dpadFocus()) {
+                    Text("Rename TV")
+                }
+                TextButton(onClick = { onBlurBars(!blurBars) }, modifier = Modifier.dpadFocus()) {
+                    Text("Blurred sides for upright iPhone: ${if (blurBars) "On" else "Off"}")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.dpadFocus()) { Text("Done") }
+        }
+    )
 }
 
 @Composable

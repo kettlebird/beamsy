@@ -31,6 +31,7 @@ class VideoRenderer(ctx: Context) {
     @Volatile var droppedFrames = 0L; private set
     @Volatile var framePacingJitterUs = 0L; private set
 
+    var blurBars by pipeline::blurBars
     var enforceSdr = true
     var keyAllowFrameDrop = true
     var scheduledOutputBufferRelease = true

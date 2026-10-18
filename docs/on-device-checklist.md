@@ -45,16 +45,17 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 
 1. Leave the steps screen untouched for 60 seconds. Expected: it switches to the ambient screen.
 2. Press any remote key. Expected: it returns to the steps screen.
-3. On the ambient screen, press OK to wake it. Expected: the screen wakes and the rename dialog does NOT open.
+3. On the ambient screen, press OK to wake it. Expected: the screen wakes and the Settings dialog does NOT open.
 4. On the ambient screen, press Back. Expected: it returns to the steps screen and the app does not exit.
 5. Leave the app on the ambient screen for longer than the TV's own screensaver timeout (check Settings, usually 5 to 15 minutes), then mirror from the iPhone. Expected: the TV is still listed, mirroring works, and the TV's screensaver never took over.
 6. On a TV that has its own built-in AirPlay or Google Cast receiver, check that this TV still appears in the iPhone's list under its name. If the steps screen instead shows "This TV can't be found right now. Close and reopen the app.", note it (the app could not start its server).
 
-## 6. Rename
+## 6. Settings
 
-1. Open the rename dialog, use the TV's on-screen keyboard to type "Kitchen", and Save. Expected: the on-screen keyboard works in the field, and the iPhone lists "Kitchen" within about 5 seconds.
+1. Open Settings, choose Rename TV, use the TV's on-screen keyboard to type "Kitchen", and Save. Expected: the on-screen keyboard works in the field, and the iPhone lists "Kitchen" within about 5 seconds.
 2. Open the dialog again and clear the name to blank. Expected: Save is disabled.
 3. Rename to a 40-character name, then set the TV's font size to Large (or the largest) in accessibility settings. Expected: the steps screen and dialog still fit, with no clipped or overlapping text.
+4. Mirror with the iPhone upright. Expected: the sides show a soft, dimmed blur of the picture, with no visible blocks, and motion stays smooth. Turn "Blurred sides for upright iPhone" Off in Settings and mirror again. Expected: the sides are plain black.
 
 ## 7. First run
 

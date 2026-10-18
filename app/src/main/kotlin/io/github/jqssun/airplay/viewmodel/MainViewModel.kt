@@ -266,6 +266,8 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
     // service binding
     fun bindService(svc: AirPlayService) {
         service = svc
+        // the full-screen surface usually exists before the service binds and is never resized
+        videoSurface?.let { svc.setVideoSurface(it) }
         updateFromService()
     }
 
@@ -281,11 +283,15 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
         service?.stopServer()
     }
 
+    private var videoSurface: Surface? = null
+
     fun onSurfaceAvailable(surface: Surface) {
+        videoSurface = surface
         service?.setVideoSurface(surface)
     }
 
     fun onSurfaceDestroyed(surface: Surface) {
+        if (videoSurface === surface) videoSurface = null
         service?.clearVideoSurface(surface)
     }
 

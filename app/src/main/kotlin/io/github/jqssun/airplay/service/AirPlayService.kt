@@ -38,6 +38,7 @@ import io.github.jqssun.airplay.capForTier
 import io.github.jqssun.airplay.changes
 import io.github.jqssun.airplay.fitWithin
 import io.github.jqssun.airplay.get
+import io.github.jqssun.airplay.observe
 import io.github.jqssun.airplay.hasLocalNetwork
 import io.github.jqssun.airplay.isUnlocked
 import io.github.jqssun.airplay.realDisplaySize
@@ -340,6 +341,9 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             prefs.audioConfigFlow()
                 .debounce(AUDIO_CONFIG_DEBOUNCE_MS)
                 .collect { audioRenderer.updateConfig(it) }
+        }
+        lifecycleScope.launch {
+            prefs.observe { this[Prefs.BLUR_BARS] }.collect { videoRenderer.blurBars = it }
         }
         lifecycleScope.launch {
             prefs.changes()
