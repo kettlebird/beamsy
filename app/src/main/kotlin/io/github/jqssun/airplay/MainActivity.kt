@@ -19,7 +19,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.jqssun.airplay.service.AirPlayService
-import io.github.jqssun.airplay.ui.MainScreen
+import io.github.jqssun.airplay.ui.HomeScreen
 import io.github.jqssun.airplay.ui.theme.AirPlayTheme
 import io.github.jqssun.airplay.viewmodel.LocalNetworkAccess
 import io.github.jqssun.airplay.viewmodel.MainViewModel
@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AirPlayTheme {
-                MainScreen(
+                HomeScreen(
                     viewModel = viewModel,
                     onSurfaceAvailable = { viewModel.onSurfaceAvailable(it) },
                     onSurfaceDestroyed = { viewModel.onSurfaceDestroyed(it) },
