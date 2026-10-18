@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M0,0h320v180H0z" />
+    <!-- TV glyph, centred -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M130,50h60a5,5 0 0 1 5,5v38a5,5 0 0 1 -5,5h-60a5,5 0 0 1 -5,-5V55a5,5 0 0 1 5,-5z" />
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M133,58h54v32h-54z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M147,104h26v5h-26z" />
+</vector>

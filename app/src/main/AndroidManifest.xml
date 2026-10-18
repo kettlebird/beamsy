@@ -20,6 +20,10 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
+    <queries>
+        <package android:name="com.screenmirroringtv.unlock" />
+    </queries>
+
     <application
         android:name=".AirPlayApp"
         android:allowBackup="false"

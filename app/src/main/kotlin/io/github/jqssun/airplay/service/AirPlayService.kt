@@ -36,6 +36,7 @@ import io.github.jqssun.airplay.Prefs
 import io.github.jqssun.airplay.R
 import io.github.jqssun.airplay.capForTier
 import io.github.jqssun.airplay.changes
+import io.github.jqssun.airplay.fitWithin
 import io.github.jqssun.airplay.get
 import io.github.jqssun.airplay.hasLocalNetwork
 import io.github.jqssun.airplay.isUnlocked
@@ -488,7 +489,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         if (!clamp) return cw to ch
         // strict decoders black-screen past their limits; advertised size is only upper bound for senders
         val (maxW, maxH) = videoRenderer.maxResolution()
-        return cw.coerceAtMost(maxW) to ch.coerceAtMost(maxH)
+        return fitWithin(cw, ch, maxW, maxH)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

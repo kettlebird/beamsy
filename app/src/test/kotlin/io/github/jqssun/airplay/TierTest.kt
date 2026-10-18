@@ -14,4 +14,7 @@ class TierTest {
     @Test fun unlocked4kCapsTo1080() = assertEquals(1920 to 1080, capForTier(3840, 2160, true))
     @Test fun unlocked1080Unchanged() = assertEquals(1920 to 1080, capForTier(1920, 1080, true))
     @Test fun unlockedPortrait() = assertEquals(1080 to 1920, capForTier(2160, 3840, true))
+
+    @Test fun fitKeepsAspectForPortraitIntoLandscapeMax() = assertEquals(612 to 1088, fitWithin(1080, 1920, 1920, 1088))
+    @Test fun fitInsideMaxUnchanged() = assertEquals(1280 to 720, fitWithin(1280, 720, 1920, 1088))
 }
