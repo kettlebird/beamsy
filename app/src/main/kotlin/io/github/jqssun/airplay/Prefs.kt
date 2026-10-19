@@ -77,6 +77,7 @@ object Prefs {
     val H265_ENABLED = bool("h265_enabled", true, restart = true)
     val ENFORCE_SDR = bool("enforce_sdr", true, restart = true)
     val BLUR_BARS = bool("blur_bars", true)
+    val WIFI_WARNINGS = bool("wifi_warnings", true)
     val KEY_ALLOW_FRAME_DROP = bool(MediaFormat.KEY_ALLOW_FRAME_DROP, true, restart = true)
     val KEY_PRIORITY = bool(MediaFormat.KEY_PRIORITY, true, restart = true)
     val LOW_LATENCY = bool("low_latency", true)

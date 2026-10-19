@@ -71,7 +71,7 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 1. Plug the TV into Ethernet (Wi-Fi off). Expected: the iPhone finds the TV and mirrors.
 2. With the app open, switch the TV to a different Wi-Fi network, and join the iPhone to that network too. Expected: the TV appears in the iPhone's list within about 10 seconds. If not, the app needs to re-register for discovery on network change; report it.
 3. Look at the steps screen. Expected: under the steps, "This TV's Wi-Fi signal: Strong/Good/Fair/Weak" with matching bars (Weak in orange with "Mirroring may stutter"), or "This TV is connected by Ethernet" when wired.
-4. Mirror with reels playing on good Wi-Fi for a minute. Expected: no "Weak Wi-Fi connection" note appears. Then walk the iPhone somewhere with poor Wi-Fi. Expected: if the picture freezes or stutters, the note appears in the top right within a couple of seconds and fades about 5 seconds after the picture recovers.
+4. Mirror with reels playing on good Wi-Fi for a minute. Expected: no "Weak Wi-Fi connection" note appears. Then walk the iPhone somewhere with poor Wi-Fi. Expected: if the picture freezes or stutters, the note appears in the top right within a couple of seconds and fades about 5 seconds after the picture recovers. Turn off Settings › "Weak Wi-Fi warnings" and repeat. Expected: no note while mirroring, and the steps screen shows a weak signal as plain "Wi-Fi signal: Weak" instead of the orange warning.
 
 ## 9. Latency
 

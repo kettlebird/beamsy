@@ -49,6 +49,8 @@ fun Context.linkBars(): Int? {
     }
 }
 
+fun Context.isOnline(): Boolean = getSystemService(ConnectivityManager::class.java).activeNetwork != null
+
 fun Context.isTvDevice(): Boolean =
     packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
         (getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType ==

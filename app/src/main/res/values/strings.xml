@@ -25,9 +25,6 @@
     <string name="stopped_label">Stopped</string>
     <string name="btn_start">Start</string>
     <string name="btn_stop">Stop</string>
-    <string name="btn_allow">Allow</string>
-    <string name="btn_open_settings">Open settings</string>
-    <string name="local_network_label">Nearby devices access needed</string>
     <string name="local_network_desc">Allow access to nearby devices so AirPlay devices can find and connect to this device</string>
     <string name="unknown_track">Unknown</string>
 
