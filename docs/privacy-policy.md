@@ -34,4 +34,4 @@ If this policy changes, the new version will be published at this address with a
 
 ## Contact
 
-Kettlebird · TODO-REPLACE-WITH-CONTACT-EMAIL
+Kettlebird · [kettlebirdstudios@gmail.com](mailto:kettlebirdstudios@gmail.com)
