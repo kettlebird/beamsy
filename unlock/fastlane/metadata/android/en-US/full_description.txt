@@ -1,0 +1,12 @@
+Unlocks Full HD (1080p) mirroring in Beamsy, the free iPhone screen mirroring app for Android TV.
+
+HOW IT WORKS
+1. Install Beamsy (free) on your TV.
+2. Install this unlock app on the same TV.
+3. Open Beamsy. The footer shows "Full HD · Unlocked" and your iPhone now mirrors at up to 1080p.
+
+This is a one-time purchase, not a subscription. There is nothing to sign in to, and the unlock app has no ads.
+
+Beamsy is free software under the GPL-3.0. Source: TODO-REPLACE-WITH-OUR-REPO-URL
+
+Not affiliated with Apple Inc. iPhone is a trademark of Apple Inc.

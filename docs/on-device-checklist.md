@@ -20,7 +20,7 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 
 ## 1. Basics
 
-1. Open the TV launcher. Expected: the app is listed as "Screen Mirroring TV". Open it; it shows the steps screen.
+1. Open the TV launcher. Expected: the app is listed as "Beamsy" with the purple phone-and-TV banner. Open it; it shows the steps screen.
 2. On the iPhone, open Control Center > Screen Mirroring. Expected: the TV is listed by its device name.
 3. Tap the TV to mirror, then play something with sound. Expected: the iPhone screen shows on the TV and you hear the sound from the TV.
 4. While one iPhone is mirroring, try to mirror from a second iPhone. Expected: the second iPhone cannot take over, and the first keeps mirroring.

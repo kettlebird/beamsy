@@ -1,27 +1,33 @@
 Mirror your iPhone to your Android TV. No ads. No subscription. No time limit.
 
-Open the app on your TV, then pick your TV from Screen Mirroring in your iPhone's Control Center. The app is AirPlay-compatible, so there is nothing to install on the iPhone. Your screen and sound show up on the TV.
+Open Beamsy on your TV, then on your iPhone open Control Center, tap Screen Mirroring and pick your TV. There is nothing to install on the iPhone. Your screen and sound show up on the TV.
 
 FREE
 - Mirrors at up to 720p, with sound
 - No time limit, no ads, no account
-- Music and other audio-only playback shows when audio is playing from your iPhone
+- Upright videos and reels fill the sides with a soft blur instead of black bars
+- Shows your TV's Wi-Fi signal, and warns you when a weak connection may make the picture stutter (you can turn the warning off)
 
 FULL HD (OPTIONAL)
-- Install the separate "Screen Mirroring TV Full HD Unlock" app for up to 1080p mirroring
+- Install the separate "Beamsy Full HD Unlock" app for up to 1080p mirroring
 - $6.99, paid once. It is a one-time purchase, not a subscription
 
+SETTINGS
+- Rename your TV so it is easy to spot in the list
+- Start Beamsy when the TV turns on, so your TV is always ready
+- Open Beamsy automatically when an iPhone connects
+- Ask for a 4-digit code before anyone can mirror
+- Let a second iPhone take over, or keep the first one connected
+- Shrink the picture for TVs that cut off the edges
+
 GOOD TO KNOW
-- It works while the app is open on your TV
 - One iPhone at a time
-- iPhone only for now; Android phones are planned
-- You can rename your TV so it is easy to spot in the list
+- iPhone and iPad only for now
 - Your TV and iPhone must be on the same Wi-Fi or network
 - Protected video (for example from some streaming apps) cannot be mirrored
 
 OPEN SOURCE
-This app is free software under the GPL-3.0 and is built on UxPlay and jqssun/android-airplay-server.
-Source code: https://github.com/jqssun/android-airplay-server (upstream)
+Beamsy is free software under the GPL-3.0, built on UxPlay and jqssun/android-airplay-server.
 Source for this app: TODO-REPLACE-WITH-OUR-REPO-URL
 
-Not affiliated with Apple Inc.
+Not affiliated with Apple Inc. iPhone and iPad are trademarks of Apple Inc.
