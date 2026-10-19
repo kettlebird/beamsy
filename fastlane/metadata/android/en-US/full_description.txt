@@ -30,4 +30,4 @@ OPEN SOURCE
 Beamsy is free software under the GPL-3.0, built on UxPlay and jqssun/android-airplay-server.
 Source for this app: TODO-REPLACE-WITH-OUR-REPO-URL
 
-Not affiliated with Apple Inc. iPhone and iPad are trademarks of Apple Inc.
+Made by Kettlebird. Not affiliated with Apple Inc. iPhone and iPad are trademarks of Apple Inc.

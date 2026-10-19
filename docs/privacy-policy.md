@@ -2,7 +2,7 @@
 
 Last updated: 19 October 2026
 
-This policy covers the Android TV apps **Beamsy** (`com.screenmirroringtv.app`) and **Beamsy Full HD Unlock** (`com.screenmirroringtv.unlock`).
+Beamsy is made by **Kettlebird**. This policy covers the Android TV apps **Beamsy** (`com.screenmirroringtv.app`) and **Beamsy Full HD Unlock** (`com.screenmirroringtv.unlock`).
 
 ## What we collect
 
@@ -34,4 +34,4 @@ If this policy changes, the new version will be published at this address with a
 
 ## Contact
 
-TODO-REPLACE-WITH-CONTACT-EMAIL
+Kettlebird · TODO-REPLACE-WITH-CONTACT-EMAIL

@@ -9,4 +9,4 @@ This is a one-time purchase, not a subscription. There is nothing to sign in to,
 
 Beamsy is free software under the GPL-3.0. Source: TODO-REPLACE-WITH-OUR-REPO-URL
 
-Not affiliated with Apple Inc. iPhone is a trademark of Apple Inc.
+Made by Kettlebird. Not affiliated with Apple Inc. iPhone is a trademark of Apple Inc.
