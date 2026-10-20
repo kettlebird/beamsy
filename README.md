@@ -5,15 +5,15 @@ Mirror your iPhone to your Android TV. No ads. No subscription. No time limit.
 Open Beamsy on the TV, then pick the TV in Screen Mirroring on the iPhone. The app speaks the AirPlay protocol, so nothing is installed on the iPhone.
 
 - **Free:** mirroring up to 720p with sound, one iPhone at a time, no ads, no time limit.
-- **Full HD:** 1080p comes from a separate paid app, "Beamsy Full HD Unlock" (`com.screenmirroringtv.unlock`), **$6.99, paid once** (a one-time purchase, not a subscription). The main app checks that the unlock app is installed and signed with the same certificate.
+- **Full HD:** 1080p comes from a separate paid app, "Beamsy Full HD Unlock" (`com.beamsy.unlock`), **$6.99, paid once** (a one-time purchase, not a subscription). The main app checks that the unlock app is installed and signed with the same certificate.
 - Works while the app is open on the TV, or all the time with Settings › "Start Beamsy when the TV turns on". iPhone only for now; Android phones are planned.
 
 ## Two Gradle modules
 
 | Module | applicationId | What it is |
 | --- | --- | --- |
-| `:app` | `com.screenmirroringtv.app` | The receiver (free, 720p) |
-| `:unlock` | `com.screenmirroringtv.unlock` | The one-time "Full HD Unlock" key app (no native code) |
+| `:app` | `com.beamsy.app` | The receiver (free, 720p) |
+| `:unlock` | `com.beamsy.unlock` | The one-time "Full HD Unlock" key app (no native code) |
 
 ## Based on
 

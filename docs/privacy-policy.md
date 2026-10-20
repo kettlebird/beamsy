@@ -2,7 +2,7 @@
 
 Last updated: 19 October 2026
 
-Beamsy is made by **Kettlebird**. This policy covers the Android TV apps **Beamsy** (`com.screenmirroringtv.app`) and **Beamsy Full HD Unlock** (`com.screenmirroringtv.unlock`).
+Beamsy is made by **Kettlebird**. This policy covers the Android TV apps **Beamsy** (`com.beamsy.app`) and **Beamsy Full HD Unlock** (`com.beamsy.unlock`).
 
 ## What we collect
 

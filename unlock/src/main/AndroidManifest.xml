@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <queries>
-        <package android:name="com.screenmirroringtv.app" />
+        <package android:name="com.beamsy.app" />
     </queries>
 
     <application

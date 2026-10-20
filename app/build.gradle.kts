@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.screenmirroringtv.app"
+        applicationId = "com.beamsy.app"
         minSdk = 28
         targetSdk = 37
         versionCode = 1

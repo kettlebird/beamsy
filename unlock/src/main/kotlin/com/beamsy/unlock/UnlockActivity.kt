@@ -1,4 +1,4 @@
-package com.screenmirroringtv.unlock
+package com.beamsy.unlock
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
@@ -7,7 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 
-private const val MAIN_PACKAGE = "com.screenmirroringtv.app"
+private const val MAIN_PACKAGE = "com.beamsy.app"
 
 class UnlockActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

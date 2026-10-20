@@ -35,7 +35,7 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 
 1. Free tier (unlock app not installed): mirror a landscape video, then a portrait app (for example Settings or Safari). Expected: video is no larger than 1280x720 and has the right proportions in both (no stretching or squashing).
 2. Install the unlock app (`adb install -r` as above), close the main app, reopen it and mirror again. Expected: mirroring now runs at 1080p, and the footer says "Full HD · unlocked".
-3. With the main app in the background (press Home), uninstall the unlock app (`adb uninstall com.screenmirroringtv.unlock`). Reopen the main app and mirror. Expected: back to 720p.
+3. With the main app in the background (press Home), uninstall the unlock app (`adb uninstall com.beamsy.unlock`). Reopen the main app and mirror. Expected: back to 720p.
 
 ## 4. Audio only
 

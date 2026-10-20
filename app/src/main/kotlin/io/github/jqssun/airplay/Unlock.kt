@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 
-const val UNLOCK_PACKAGE = "com.screenmirroringtv.unlock"
+const val UNLOCK_PACKAGE = "com.beamsy.unlock"
 
 // Full HD is unlocked by installing the paid key app, which must be signed with the same key as this app.
 fun isUnlocked(context: Context): Boolean = try {

@@ -9,7 +9,7 @@ val localProps = Properties().apply {
 }
 
 android {
-    namespace = "com.screenmirroringtv.unlock"
+    namespace = "com.beamsy.unlock"
     compileSdk = 37
 
     if (localProps.containsKey("storeFile")) {
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.screenmirroringtv.unlock"
+        applicationId = "com.beamsy.unlock"
         minSdk = 28
         targetSdk = 37
         versionCode = 1

@@ -22,7 +22,7 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <queries>
-        <package android:name="com.screenmirroringtv.unlock" />
+        <package android:name="com.beamsy.unlock" />
     </queries>
 
     <application
