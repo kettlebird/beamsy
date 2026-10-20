@@ -13,3 +13,10 @@
 *.jks
 .superpowers/
 graphify-out/cache/
+
+# local only: AI tooling and internal planning notes
+/.claude/
+/CLAUDE.md
+/docs/superpowers/
+/graphify-out/
+/.kotlin/
