@@ -7,6 +7,6 @@ HOW IT WORKS
 
 This is a one-time purchase, not a subscription. There is nothing to sign in to, and the unlock app has no ads.
 
-Beamsy is free software under the GPL-3.0. Source: TODO-REPLACE-WITH-OUR-REPO-URL
+Beamsy is free software under the GPL-3.0. Source: https://github.com/yugio999/beamsy
 
 Made by Kettlebird. Not affiliated with Apple Inc. iPhone is a trademark of Apple Inc.
