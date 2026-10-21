@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
         if (missing.isNotEmpty()) permissions.launch(missing.toTypedArray())
 
         bindService(Intent(this, AirPlayService::class.java), connection, BIND_AUTO_CREATE)
+        FullHd.connect(this)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

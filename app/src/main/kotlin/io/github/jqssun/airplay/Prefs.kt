@@ -110,5 +110,9 @@ object Prefs {
     val ADVERTISE_MIRRORING = bool("advertise_mirroring", true, restart = true)
     val ADVERTISE_AUDIO = bool("advertise_audio", true, restart = true)
     val LAUNCH_ON_CONNECT = bool("launch_on_connect", false)
+    // cached Play purchase, written only by FullHd
+    val FULL_HD = bool("full_hd", false, restart = true)
+    // seconds of the free trial's hour used so far (FreeTime)
+    val TRIAL_USED = int("trial_used_s", 0, 0..Int.MAX_VALUE)
     val USB_ONLY = bool("usb_only", false, restart = true)
 }

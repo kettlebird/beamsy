@@ -34,13 +34,15 @@ import androidx.media.app.NotificationCompat as MediaNotificationCompat
 import io.github.jqssun.airplay.MainActivity
 import io.github.jqssun.airplay.Prefs
 import io.github.jqssun.airplay.R
+import io.github.jqssun.airplay.FreeTime
+import io.github.jqssun.airplay.Plan
 import io.github.jqssun.airplay.capForTier
+import io.github.jqssun.airplay.fpsForTier
 import io.github.jqssun.airplay.changes
 import io.github.jqssun.airplay.fitWithin
 import io.github.jqssun.airplay.get
 import io.github.jqssun.airplay.observe
 import io.github.jqssun.airplay.hasLocalNetwork
-import io.github.jqssun.airplay.isUnlocked
 import io.github.jqssun.airplay.realDisplaySize
 import io.github.jqssun.airplay.tvName
 import io.github.jqssun.airplay.audio.DacpController
@@ -63,6 +65,7 @@ import java.net.NetworkInterface
 import java.security.SecureRandom
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -146,6 +149,10 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         !_videoPlaybackActive.value && !_audioOnly.value && !_mirroringActive.value &&
             !_videoPollSuppressed &&
             SystemClock.elapsedRealtime() - _lastVideoPollAt < VIDEO_POLL_PENDING_TIMEOUT_MS
+
+    // screen time in the current free-plan session; kept after the session ends so the UI can tell it was cut
+    private val _sessionSeconds = MutableStateFlow(0)
+    val sessionSeconds = _sessionSeconds.asStateFlow()
 
     // set once mirroring reports a real size; stops with session
     private val _mirroringActive = MutableStateFlow(false)
@@ -345,6 +352,32 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         lifecycleScope.launch {
             prefs.observe { this[Prefs.BLUR_BARS] }.collect { videoRenderer.blurBars = it }
         }
+        // free plans count only the screen (audio-only is never limited): the trial's hour, then 15-minute sessions
+        lifecycleScope.launch {
+            val tick = (FREE_TICK_MS / 1000).toInt()
+            while (true) {
+                delay(FREE_TICK_MS)
+                if (!_mirroringActive.value && !_videoPlaybackActive.value) continue
+                when (FreeTime.plan(this@AirPlayService, prefs)) {
+                    Plan.UNLIMITED -> {}
+                    Plan.TRIAL -> {
+                        FreeTime.addTrial(prefs, tick)
+                        if (FreeTime.trialLeft(prefs) == 0) {
+                            // this session carries on; the next one gets 720p at 30 fps
+                            log("Free trial used up")
+                            _advertiseForPlan()
+                        }
+                    }
+                    Plan.FREE -> {
+                        _sessionSeconds.value += tick
+                        if (_sessionSeconds.value >= FreeTime.SESSION_SECONDS) {
+                            log("Free session ended after ${FreeTime.SESSION_MINUTES} minutes")
+                            _restartServer()
+                        }
+                    }
+                }
+            }
+        }
         lifecycleScope.launch {
             prefs.changes()
                 .filter { Prefs.all[it]?.restart == true }
@@ -402,7 +435,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         audioRenderer.attachEngine(nativeHandle)
 
         // apply settings from preferences
-        val maxFps = prefs[Prefs.MAX_FPS]
+        val maxFps = _maxFps()
         val overscanned = prefs[Prefs.OVERSCANNED]
         val audioLatencyMs = prefs[Prefs.AUDIO_LATENCY_MS]
         val (reqW, reqH) = _displaySize(clamp = false)
@@ -485,6 +518,11 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private fun _orientationFollowsDevice(): Boolean =
         prefs[Prefs.RESOLUTION] == Prefs.AUTO
 
+    // Full HD at 60 fps for Unlimited and during the trial
+    private fun _fullQuality() = FreeTime.plan(this, prefs) != Plan.FREE
+
+    private fun _maxFps() = fpsForTier(prefs[Prefs.MAX_FPS], _fullQuality())
+
     private fun _displaySize(clamp: Boolean = true): Pair<Int, Int> {
         val res = prefs[Prefs.RESOLUTION]
         val portrait = when (res) {
@@ -494,7 +532,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         }
         val (rawW, rawH) = realDisplaySize()
         val device = if (portrait != rawH >= rawW) rawH to rawW else rawW to rawH
-        val unlocked = isUnlocked(this)
+        val unlocked = _fullQuality()
         if (res == Prefs.PORTRAIT || res == Prefs.LANDSCAPE) return capForTier(device.first, device.second, unlocked)
         val (w, h) = if (res.contains("x")) {
             res.split("x").let { it[0].toInt() to it[1].toInt() }
@@ -513,8 +551,16 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         if (nativeHandle == 0L || _serverState.value != ServerState.RUNNING) return
         if (!_orientationFollowsDevice()) return
         val (w, h) = _displaySize()
-        NativeBridge.nativeSetDisplaySize(nativeHandle, w, h, prefs[Prefs.MAX_FPS])
+        NativeBridge.nativeSetDisplaySize(nativeHandle, w, h, _maxFps())
         log("Advertising ${w}x${h} from next session")
+    }
+
+    // the plan's resolution and frame rate, for the next session
+    private fun _advertiseForPlan() {
+        if (nativeHandle == 0L || _serverState.value != ServerState.RUNNING) return
+        val (w, h) = _displaySize()
+        NativeBridge.nativeSetDisplaySize(nativeHandle, w, h, _maxFps())
+        log("Advertising ${w}x${h} at ${_maxFps()} fps from next session")
     }
 
     private fun _failStart() {
@@ -776,6 +822,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     override fun onConnectionInit() {
         val firstConnection = _connectionCount.value == 0
+        if (firstConnection) _sessionSeconds.value = 0
         _connectionCount.value++
         log("Client connected (${_connectionCount.value})")
         if (!firstConnection) return
@@ -1191,5 +1238,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
         private const val AUDIO_CONFIG_DEBOUNCE_MS = 500L
         private const val SERVER_RESTART_DEBOUNCE_MS = 500L
+        private const val FREE_TICK_MS = 5_000L
     }
 }

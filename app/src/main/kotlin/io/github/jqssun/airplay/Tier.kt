@@ -10,6 +10,11 @@ fun fitWithin(w: Int, h: Int, maxW: Int, maxH: Int): Pair<Int, Int> {
     return (cw and 1.inv()) to (ch and 1.inv())
 }
 
+const val FREE_FPS = 30
+
+// Free mirrors at up to 30 fps, unlimited at the full rate (60 by default).
+fun fpsForTier(maxFps: Int, unlocked: Boolean): Int = if (unlocked) maxFps else minOf(maxFps, FREE_FPS)
+
 // Fit inside 1280x720 (free) or 1920x1080 (unlocked), swapped for portrait.
 fun capForTier(w: Int, h: Int, unlocked: Boolean): Pair<Int, Int> {
     val (long, short) = if (unlocked) 1920 to 1080 else 1280 to 720

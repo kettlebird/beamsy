@@ -125,6 +125,7 @@ dependencies {
     implementation(libs.media3.transformer)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.oboe)
+    implementation(libs.billing)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

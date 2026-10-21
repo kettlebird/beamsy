@@ -12,6 +12,7 @@ datastore = "1.1.1"
 coroutines = "1.9.0"
 media3 = "1.11.0-beta01"
 oboe = "1.9.3"
+billing = "9.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -40,6 +41,8 @@ media3-transformer = { group = "androidx.media3", name = "media3-transformer", v
 media3-ui-compose-material3 = { group = "androidx.media3", name = "media3-ui-compose-material3", version.ref = "media3" }
 
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 
 oboe = { group = "com.google.oboe", name = "oboe", version.ref = "oboe" }
 
