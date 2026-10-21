@@ -32,9 +32,11 @@ TV = (10, 34, 64, 42, 9)
 STAND = (29, 82, 26, 6, 3)
 PIC = (20, 43, 44, 24, 5)
 MARK_BOX = (10, 10, 88, 88)  # drawn extent
+CUT = (18, 42, 48, 26, 4)  # Concept C: the TV's screen is cut out, so the phone shows through
 
 THEMES = {
-    "app": dict(bg=("#8B5CF6", "#3B0D8C"), glow="#C4B5FD"),
+    # Concept C (design/play-store/listing.html): neutral dark, monochrome mark. Its Play PNGs come from design/play-store/render.py.
+    "app": dict(dark=True, bg=("#2B2B30", "#0E0E10"), banner_bg=("#1C1C20", "#0C0C0D")),
     "unlock": dict(bg=("#F59E0B", "#B45309"), glow="#FDE68A"),
 }
 
@@ -67,8 +69,14 @@ def cap_height(font_file, size):
     return font["OS/2"].sCapHeight * size / font["head"].unitsPerEm
 
 
-def mark_paths(s, tx, ty, ink="#FFFFFF", mono=False):
+def mark_paths(s, tx, ty, ink="#FFFFFF", mono=False, cut=False):
     out = []
+    if cut:
+        # phone at 42 %, TV with its screen cut out (even-odd), stand
+        tv = rr_path(*TV, s=s, tx=tx, ty=ty) + rr_path(*CUT, s=s, tx=tx, ty=ty)
+        return [f'    <path android:fillColor="{ink}" android:fillAlpha="0.42" android:pathData="{rr_path(*PHONE, s=s, tx=tx, ty=ty)}" />',
+                f'    <path android:fillColor="{ink}" android:fillType="evenOdd" android:pathData="{tv}" />',
+                f'    <path android:fillColor="{ink}" android:pathData="{rr_path(*STAND, s=s, tx=tx, ty=ty)}" />']
     if mono:
         # one shape: phone, TV with the picture cut out, stand
         d = rr_path(*PHONE, s=s, tx=tx, ty=ty) + rr_path(*TV, s=s, tx=tx, ty=ty) + rr_path(*PIC, s=s, tx=tx, ty=ty) + rr_path(*STAND, s=s, tx=tx, ty=ty)
@@ -86,7 +94,16 @@ def mark_paths(s, tx, ty, ink="#FFFFFF", mono=False):
     return out
 
 
-def background_paths(w, h, theme):
+def background_paths(w, h, theme, banner=False):
+    if theme.get("dark"):
+        # top-lit, not a glow: banner fades by 70 % like the home screen, the icon over its full height
+        a, b = theme["banner_bg"] if banner else theme["bg"]
+        return [f'''    <path android:pathData="M0,0h{w}v{h}H0z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="{(0.7 if banner else 1) * h:.1f}"
+                android:startColor="{a}" android:endColor="{b}" />
+        </aapt:attr>
+    </path>''']
     a, b = theme["bg"]
     g = theme["glow"]
     r = 0.55 * max(w, h)
@@ -141,11 +158,11 @@ for app, theme in THEMES.items():
     write(os.path.join(res, "ic_launcher_background.xml"), vector(108, 108, background_paths(108, 108, theme)))
     # adaptive foreground: the safe zone is a 66 dp circle, so the mark's corners must stay within r=33: 78 units at 0.6
     s, t = 0.6, 54 - 49 * 0.6
-    write(os.path.join(res, "ic_launcher_foreground.xml"), vector(108, 108, mark_paths(s, t, t)))
+    write(os.path.join(res, "ic_launcher_foreground.xml"), vector(108, 108, mark_paths(s, t, t, cut=theme.get("dark", False))))
     write(os.path.join(res, "ic_launcher_monochrome.xml"), vector(108, 108, mark_paths(s, t, t, mono=True)))
     subtitle = "Full HD Unlock" if app == "unlock" else None
     s, mtx, mty, tx_, base, size, sub_h = banner_layout(subtitle)
-    body = background_paths(320, 180, theme) + mark_paths(s, mtx, mty)
+    body = background_paths(320, 180, theme, banner=True) + mark_paths(s, mtx, mty, cut=theme.get("dark", False))
     d, _ = text_path("Beamsy", BOLD, size, tx_, base)
     body.append(f'    <path android:fillColor="#FFFFFF" android:pathData="{d}" />')
     if subtitle:
@@ -257,6 +274,8 @@ def lockup(img, k, w, h, size, subtitle=None, tagline=None):
 
 
 for app, theme in THEMES.items():
+    if theme.get("dark"):
+        continue  # design/play-store/render.py renders these from the Concept C listing page
     out = os.path.join(ROOT, "fastlane/metadata/android/en-US/images") if app == "app" else os.path.join(ROOT, "unlock/fastlane/metadata/android/en-US/images")
     sub = "Full HD Unlock" if app == "unlock" else None
     png(os.path.join(out, "icon.png"), 512, 512, theme, lambda img, k: draw_mark(img, 3.1 * k, (512 - 310) / 2 * k, (512 - 310) / 2 * k))

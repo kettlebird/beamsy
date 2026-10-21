@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beamsy UI</title>
+<!--
+  Design concept for app/src/main/kotlin/io/github/jqssun/airplay/ui/HomeScreen.kt (Concept C).
+  Units are dp: the stage is the TV's 960×540 dp (1920×1080 px at density 320), scaled to the window.
+  Safe area: 48 dp left/right, 28 dp top/bottom. Edit the tokens in :root, then port them to HomeScreen.kt.
+  The previous concept (B, violet glow) is kept in beamsy-ui.v1.html.
+
+  Rules this concept follows:
+  - One neutral canvas, no coloured glows. Colour only means state (green ready, orange attention, red failure).
+  - Focus is the one loud thing on screen: white fill, dark text, slight lift. Resting controls stay quiet.
+  - Show the real iPhone gesture instead of describing it in cards.
+  - Type tracking and leading change with size; numbers are tabular.
+-->
+<style>
+@font-face { font-family: "Open Sauce Sans"; font-weight: 400; src: url("../app/src/main/res/font/open_sauce_sans_regular.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 500; src: url("../app/src/main/res/font/open_sauce_sans_medium.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 600; src: url("../app/src/main/res/font/open_sauce_sans_semibold.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 700; src: url("../app/src/main/res/font/open_sauce_sans_bold.ttf"); }
+
+:root {
+  /* surfaces */
+  --canvas: #0C0C0D;          /* home background, bottom */
+  --canvas-top: #18181B;      /* home background, top (soft top light, not a glow) */
+  --surface: rgba(30, 30, 32, .88);  /* settings / dialogs (solid #1E1E20 where blur is unavailable) */
+  --scrim: rgba(0, 0, 0, .55);
+  --hairline: rgba(255, 255, 255, .09);
+  --fill: rgba(255, 255, 255, .09);  /* resting button */
+
+  /* text */
+  --text: #F5F5F7;
+  --text-2: rgba(245, 245, 247, .62);
+  --text-3: rgba(245, 245, 247, .38);
+
+  /* focus */
+  --focus: #F5F5F7;
+  --on-focus: #0C0C0D;
+  --on-focus-2: rgba(12, 12, 13, .58);
+
+  /* state */
+  --ready: #30D158;
+  --attention: #FF9F0A;
+  --failure: #FF453A;
+
+  /* motion: critically damped feel, no overshoot */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --t-focus: 220ms;
+
+  --font: "Open Sauce Sans", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #000; color: var(--text); font-family: var(--font); }
+body { display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; outline: none; }
+
+/* ---- control bar (not part of the TV UI) ---- */
+#bar {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+  padding: 8px 16px; background: #111; border-bottom: 1px solid #222;
+  font: 500 12px/1.2 system-ui, sans-serif; color: #bbb;
+}
+#bar label { display: flex; gap: 6px; align-items: center; }
+#bar select, #bar input[type=text], #bar input[type=number] { background: #1c1c1c; color: #eee; border: 1px solid #333; border-radius: 4px; padding: 3px 6px; font: inherit; }
+#bar .hint { color: #666; }
+#viewport { flex: 1; display: grid; place-items: center; overflow: hidden; }
+
+/* ---- the TV: 960×540 dp ---- */
+#tv { width: 960px; height: 540px; position: relative; overflow: hidden; transform-origin: center; background: var(--canvas); flex: none; }
+.layer { position: absolute; inset: 0; }
+.num-t { font-variant-numeric: tabular-nums; }
+
+/* ---- type scale ---- */
+.t-display { font-weight: 600; letter-spacing: -.035em; line-height: 1.02; }
+.t-title   { font-size: 26px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; }
+.t-body    { font-size: 16px; font-weight: 500; line-height: 1.4; }
+.t-callout { font-size: 15px; font-weight: 500; line-height: 1.35; }
+.t-caption { font-size: 13px; font-weight: 500; line-height: 1.3; letter-spacing: .005em; }
+
+.mark { display: block; flex: none; color: var(--text); }
+
+/* ---- buttons: quiet at rest, unmistakable on focus ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 34px; padding: 0 16px; border-radius: 10px;
+  background: var(--fill); color: rgba(245,245,247,.92);
+  font-size: 14px; font-weight: 600; letter-spacing: .005em; white-space: nowrap;
+  transition: transform var(--t-focus) var(--ease), background-color 120ms linear, color 120ms linear, box-shadow var(--t-focus) var(--ease);
+}
+.btn.lg { height: 42px; padding: 0 22px; border-radius: 12px; font-size: 16px; }
+.btn:focus, .btn.is-focus { background: var(--focus); color: var(--on-focus); transform: scale(1.06); box-shadow: 0 10px 28px rgba(0,0,0,.55); }
+.btn:active { transform: scale(.97); transition-duration: 80ms; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn .sub { font-weight: 500; opacity: .62; }
+
+/* Wi-Fi bars */
+.bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 10px; }
+.bars i { width: 2.5px; border-radius: .75px; background: currentColor; opacity: .25; }
+.bars i.on { opacity: 1; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dc); flex: none; }
+.spin { width: 12px; height: 12px; flex: none; border-radius: 50%; border: 2px solid var(--text); border-right-color: transparent; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================= home ================= */
+.home { background: linear-gradient(180deg, var(--canvas-top) 0%, var(--canvas) 62%); }
+.header { position: absolute; left: 48px; right: 48px; top: 28px; height: 28px; display: flex; align-items: center; }
+.header .word { margin-left: 9px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.header .clock { margin-left: auto; font-size: 18px; font-weight: 500; color: var(--text-2); }
+
+.lede { position: absolute; left: 48px; top: 0; bottom: 0; width: 540px; display: flex; flex-direction: column; justify-content: center; padding-bottom: 8px; }
+.lede .lead { color: var(--text-2); }
+.lede .name { margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 540px;
+  padding-bottom: .16em; margin-bottom: -.16em; } /* room for descenders (g, y, p) inside the clip, layout unchanged */
+.status { margin-top: 16px; display: flex; align-items: center; gap: 10px; color: var(--text-2); }
+.status b { font-weight: 600; color: var(--text); }
+.note { margin-top: 6px; padding-left: 18px; color: var(--text-3); }
+.action { margin-top: 18px; align-self: flex-start; }
+
+.steps-list { margin-top: 38px; list-style: none; display: flex; flex-direction: column; gap: 14px; transition: opacity 300ms linear; }
+.step { display: flex; align-items: flex-start; gap: 14px; font-size: 17px; font-weight: 500; line-height: 24px; color: var(--text-3); transition: color 300ms linear; }
+.step .n {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1.25px currentColor;
+  transition: background-color 300ms linear, color 300ms linear, box-shadow 300ms linear;
+}
+.step q { quotes: "“" "”"; font-weight: 600; }
+.home[data-step="1"] .step[data-n="1"], .home[data-step="2"] .step[data-n="2"], .home[data-step="3"] .step[data-n="3"] { color: var(--text); }
+.home[data-step="1"] .step[data-n="1"] .n, .home[data-step="2"] .step[data-n="2"] .n, .home[data-step="3"] .step[data-n="3"] .n { background: var(--text); color: var(--canvas); box-shadow: none; }
+/* not cycling (reduced motion, overlay open): every step reads at full strength */
+.home.static .step { color: var(--text); }
+.home.static .step .n { background: none; color: var(--text-2); box-shadow: inset 0 0 0 1.25px var(--text-3); }
+.home.inactive .steps-list, .home.inactive .device, .home.connecting .steps-list { opacity: .3; }
+
+.footer { position: absolute; left: 48px; right: 48px; bottom: 28px; height: 34px; display: flex; align-items: center; gap: 14px; }
+.footer .plan { color: var(--text-3); }
+.footer .net { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+.footer .net.warn { color: var(--attention); }
+.footer .net + .btn { margin-left: 10px; }
+/* free trial: minutes of Full HD left */
+.allow { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+.meter { width: 44px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.14); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 2px; background: currentColor; }
+
+/* ---- iPhone illustration (182×392, built from boxes so it ports to Compose) ---- */
+.device {
+  position: absolute; left: 676px; top: 74px; width: 184px; height: 392px; padding: 6px;
+  border-radius: 34px; background: #1A1A1C; box-shadow: inset 0 0 0 1px rgba(255,255,255,.16), 0 28px 60px rgba(0,0,0,.55);
+  transition: opacity 300ms linear;
+}
+.screen { position: relative; width: 100%; height: 100%; border-radius: 28px; overflow: hidden; background: linear-gradient(165deg, #34343A 0%, #1B1B20 55%, #121215 100%); }
+.sb { position: absolute; left: 0; right: 0; top: 0; height: 34px; font-size: 9px; font-weight: 600; }
+.sb .time { position: absolute; left: 20px; top: 12px; }
+.sb .island { position: absolute; left: 50%; top: 9px; width: 52px; height: 16px; margin-left: -26px; border-radius: 8px; background: #000; }
+.sb .icons { position: absolute; right: 16px; top: 12px; display: flex; align-items: center; gap: 4px; }
+.sb .batt { width: 16px; height: 8px; border-radius: 2.5px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); padding: 1.5px; }
+.sb .batt::after { content: ""; display: block; width: 70%; height: 100%; border-radius: 1px; background: #fff; }
+.sb .wifi { position: relative; display: block; }
+.sb .ring { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff; opacity: 0; }
+.home[data-step="1"] .sb .ring { animation: ring 1.3s .3s var(--ease) 2; }
+@keyframes ring { 0% { opacity: 0; transform: scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.35); } }
+
+.apps { position: absolute; left: 18px; right: 18px; top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 12px; }
+.apps i, .dock i { aspect-ratio: 1; border-radius: 9px; background: rgba(255,255,255,.1); }
+.dock { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 54px; padding: 0 10px; border-radius: 22px; background: rgba(255,255,255,.07); display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: center; }
+
+/* Control Center */
+.cc {
+  position: absolute; inset: 0; padding: 42px 14px 0; background: rgba(8,8,10,.62); backdrop-filter: blur(10px);
+  display: grid; grid-template-columns: repeat(4, 30px); grid-auto-rows: 30px; gap: 8px; align-content: start;
+  grid-template-areas: "a a b b" "a a b b" "r m l v" "t t l v" "c d e f";
+  opacity: 0; transform: translateY(-14px); transition: opacity 260ms linear, transform 420ms var(--ease);
+}
+.cc > i { border-radius: 10px; background: rgba(255,255,255,.14); display: grid; place-items: center; color: #fff; transition: background-color 120ms linear, color 120ms linear; }
+.cc .a { grid-area: a; border-radius: 16px; display: grid; grid-template-columns: 1fr 1fr; padding: 7px; gap: 6px; }
+.cc .a b { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.22); margin: auto; }
+.cc .a b:first-child { background: #fff; }
+.cc .b { grid-area: b; border-radius: 16px; }
+.cc .r { grid-area: r; border-radius: 50%; } .cc .m { grid-area: m; }
+.cc .l { grid-area: l; border-radius: 12px; background: linear-gradient(to top, #fff 55%, rgba(255,255,255,.14) 55%); }
+.cc .v { grid-area: v; border-radius: 12px; background: linear-gradient(to top, #fff 35%, rgba(255,255,255,.14) 35%); }
+.cc .t { grid-area: t; border-radius: 12px; }
+.cc .c, .cc .d, .cc .e, .cc .f { border-radius: 50%; }
+.home[data-step="2"] .cc, .home[data-step="3"] .cc { opacity: 1; transform: none; }
+.home[data-step="2"] .cc { transition-delay: .5s; }
+.home[data-step="3"] .cc .m { background: #fff; color: #000; transition-delay: .45s; }
+.cc > i { transition-property: background-color, color, opacity; transition-duration: 120ms, 120ms, 300ms; }
+.home[data-step="3"] .cc > i { opacity: .35; transition-delay: 1s; } /* dimmed behind the sheet, as on iOS */
+.home[data-step="3"] .cc .m { transition-delay: .45s, .45s, 1s; }
+
+/* Screen Mirroring sheet, scaled in from the tile that opened it */
+.sheet {
+  position: absolute; left: 12px; right: 12px; top: 112px; padding: 12px 8px 8px; border-radius: 18px;
+  background: rgba(44,44,48,.97); box-shadow: 0 12px 30px rgba(0,0,0,.5);
+  transform-origin: 55px 19px; opacity: 0; transform: scale(.4); transition: opacity 180ms linear, transform 380ms var(--ease);
+}
+.sheet h4 { font-size: 10px; font-weight: 600; text-align: center; margin-bottom: 10px; }
+.sheet .row { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 9px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: 10px; font-weight: 600; transition: background-color 150ms linear; }
+.sheet .row span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sheet .tick { opacity: 0; transition: opacity 150ms linear; }
+.sheet .spin { width: 10px; height: 10px; border-width: 1.5px; }
+.sheet .hint { margin: 8px 4px 2px; font-size: 8px; font-weight: 500; line-height: 1.35; color: rgba(255,255,255,.45); text-align: center; }
+.home[data-step="3"] .sheet { opacity: 1; transform: none; transition-delay: 1s; }
+.home[data-step="3"] .sheet .row { background: rgba(255,255,255,.2); transition-delay: 1.95s; }
+.home[data-step="3"] .sheet .tick { opacity: 1; transition-delay: 2.05s; }
+
+/* touches */
+.touch { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.5); box-shadow: 0 0 0 1px rgba(255,255,255,.8); opacity: 0; pointer-events: none; }
+.touch.swipe { left: 140px; top: 4px; }
+.touch.tap1 { left: 56px; top: 120px; }
+.touch.tap2 { left: 75px; top: 150px; }
+.home[data-step="2"] .touch.swipe { animation: swipe 1.25s .2s var(--ease) both; }
+.home[data-step="3"] .touch.tap1 { animation: tap .8s .1s both; }
+.home[data-step="3"] .touch.tap2 { animation: tap .8s 1.6s both; }
+@keyframes swipe { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: none; } 70% { opacity: 1; transform: translateY(104px); } 100% { opacity: 0; transform: translateY(118px); } }
+@keyframes tap { 0% { opacity: 0; transform: scale(1.4); } 25% { opacity: 1; transform: none; } 45% { transform: scale(.82); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(.82); } }
+
+.home.static * { animation: none !important; transition-delay: 0s !important; }
+.home.static .touch { display: none; }
+
+/* ================= overlays ================= */
+.scrim { background: var(--scrim); }
+.material { background: var(--surface); backdrop-filter: blur(40px) saturate(1.4); }
+
+/* settings: a parallel panel, home stays visible behind it */
+.settings {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 420px; padding: 28px 24px 22px 24px;
+  display: flex; flex-direction: column; box-shadow: inset 1px 0 var(--hairline), -24px 0 60px rgba(0,0,0,.35);
+}
+.settings header { padding: 0 14px; }
+.settings .t-caption { margin-top: 3px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settings .list {
+  flex: 1; overflow-y: auto; margin-top: 14px; padding: 2px 4px 24px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 28px), transparent);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 10px, #000 calc(100% - 28px), transparent);
+}
+.section { padding: 16px 14px 6px; font-size: 13px; font-weight: 600; color: var(--text-3); }
+.section:first-child { padding-top: 6px; }
+.row-s {
+  width: 100%; height: 42px; margin-bottom: 2px; padding: 0 14px; border-radius: 11px;
+  display: flex; align-items: center; gap: 16px; text-align: left;
+  font-size: 16px; font-weight: 500; color: rgba(245,245,247,.92);
+  transition: transform var(--t-focus) var(--ease), background-color 120ms linear, color 120ms linear;
+}
+.row-s .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-s .value { display: flex; align-items: center; gap: 4px; font-size: 15px; color: var(--text-2); white-space: nowrap; }
+.row-s .value svg { opacity: .7; }
+.row-s:focus, .row-s.is-focus { background: var(--focus); color: var(--on-focus); transform: scale(1.025); }
+.row-s:focus .value, .row-s.is-focus .value { color: var(--on-focus-2); }
+.row-s .on { color: var(--text); }
+.row-s:focus .on, .row-s.is-focus .on { color: var(--on-focus); }
+.foot-hint { padding: 12px 14px 0; color: var(--text-3); }
+
+/* rename: sits at the top, the system keyboard takes the bottom half */
+.dialog { position: absolute; border-radius: 22px; box-shadow: inset 0 0 0 1px var(--hairline), 0 30px 80px rgba(0,0,0,.5); }
+.rename { left: 50%; top: 32px; width: 560px; margin-left: -280px; padding: 28px 32px 24px; }
+.rename p { margin-top: 6px; color: var(--text-2); }
+.field {
+  margin-top: 20px; width: 100%; height: 56px; padding: 0 18px; border-radius: 12px; outline: none; border: 0;
+  background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px var(--text); color: var(--text); caret-color: var(--text);
+  font: 600 22px var(--font); letter-spacing: -.01em;
+}
+.field.bad { box-shadow: inset 0 0 0 2px var(--failure); }
+.rename .row { margin-top: 16px; display: flex; align-items: center; gap: 10px; }
+.rename .count { flex: 1; color: var(--text-3); }
+.rename .count.bad { color: var(--failure); }
+
+/* PIN */
+.pin { left: 50%; top: 50%; width: 600px; margin: -170px 0 0 -300px; padding: 40px 40px 32px; text-align: center; }
+.pin .from { color: var(--text-2); }
+.pin .t-title { margin-top: 6px; }
+.digits { display: flex; justify-content: center; gap: 30px; margin: 30px 0 28px; }
+.digits span { width: 72px; padding-bottom: 12px; font-size: 92px; font-weight: 600; letter-spacing: -.02em; line-height: 1; box-shadow: inset 0 -2px rgba(255,255,255,.22); }
+.pin .foot-hint { padding: 0; }
+
+/* ================= screensaver / audio ================= */
+.saver { background: #000; }
+.saver .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform 2s var(--ease); }
+.saver .big { font-size: 128px; font-weight: 400; letter-spacing: -.045em; line-height: 1; color: rgba(245,245,247,.88); }
+.saver .day { margin-top: 10px; font-size: 20px; font-weight: 500; color: var(--text-3); }
+.saver .foot { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; align-items: center; gap: 9px; color: var(--text-3); }
+.saver .foot b { font-weight: 600; color: var(--text-2); }
+.saver .foot .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); }
+.saver .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; color: var(--ready); }
+.saver .eq i { width: 2.5px; border-radius: 1px; background: currentColor; }
+
+/* ================= mirroring ================= */
+.mirror { background: #000; display: grid; place-items: center; overflow: hidden; }
+.mirror .pic { position: relative; width: 248px; height: 540px; overflow: hidden; }
+.mirror .pic svg, .mirror .ambient svg { display: block; width: 100%; height: 100%; }
+.mirror .pic.wide { width: 960px; }
+.mirror .ambient { position: absolute; inset: -80px; filter: blur(60px) brightness(.5) saturate(1.2); }
+.toasts { position: absolute; top: 28px; right: 32px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 12px 18px 12px 14px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--hairline), 0 12px 32px rgba(0,0,0,.45); }
+.toast .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,159,10,.16); color: var(--attention); }
+.toast .ic.neutral { background: rgba(255,255,255,.1); color: var(--text); }
+.toast b { display: block; font-size: 14px; font-weight: 600; }
+.toast span { font-size: 12px; font-weight: 500; color: var(--text-2); }
+
+/* free session ended: mirroring paused, last frame dimmed behind */
+.ended { left: 50%; top: 50%; width: 580px; margin: -150px 0 0 -290px; padding: 36px 40px 30px; text-align: center; }
+.ended .from { color: var(--text-2); }
+.ended .t-title { margin-top: 6px; }
+.ended p { margin: 12px auto 0; max-width: 440px; color: var(--text-2); }
+.ended .row { margin-top: 26px; display: flex; justify-content: center; gap: 12px; }
+
+/* reduced motion (system setting or the checkbox): cross-fades only */
+.rm * { animation: none !important; transition-property: opacity, background-color, color !important; }
+.rm .btn:focus, .rm .row-s:focus { transform: none; }
+
+[hidden] { display: none !important; }
+.capture #bar { display: none; }
+.capture body { background: var(--canvas); }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <label>Screen
+    <select id="screen">
+      <option value="steps">Home</option>
+      <option value="settings">Settings</option>
+      <option value="rename">Rename TV</option>
+      <option value="pin">PIN code</option>
+      <option value="saver">Screensaver</option>
+      <option value="audio">Audio only</option>
+      <option value="mirror">Mirroring + toasts</option>
+      <option value="ended">Free session ended</option>
+    </select>
+  </label>
+  <label>Status
+    <select id="status">
+      <option value="ready">Ready</option>
+      <option value="connecting">Connecting</option>
+      <option value="permission">Needs permission</option>
+      <option value="offline">No network</option>
+      <option value="failed">Can't be found</option>
+    </select>
+  </label>
+  <label>Network
+    <select id="net">
+      <option value="4">Wi-Fi Strong</option><option value="3">Wi-Fi Good</option>
+      <option value="2">Wi-Fi Fair</option><option value="1">Wi-Fi Weak</option>
+      <option value="0">Ethernet</option><option value="off">Not connected</option>
+    </select>
+  </label>
+  <label>TV name <input id="name" type="text" value="Alex TV" maxlength="40" size="14"></label>
+  <label>iPhone <input id="from" type="text" value="Alex's iPhone" size="12"></label>
+  <label>Price <input id="price" type="text" value="$6.99" size="6"></label>
+  <label>Plan
+    <select id="plan"><option value="trial">Free trial</option><option value="free" selected>Free</option><option value="unlimited">Unlimited</option></select>
+  </label>
+  <label>Trial min left <input id="trial" type="number" min="0" max="60" value="42" style="width:52px"></label>
+  <label>Session min <input id="session" type="number" min="0" max="15" value="13" style="width:52px"></label>
+  <label><input id="upright" type="checkbox" checked> Upright iPhone</label>
+  <label><input id="rm" type="checkbox"> Reduce motion</label>
+  <span class="hint">Tab / Shift+Tab moves focus like the D-pad · Esc is Back</span>
+</div>
+
+<div id="viewport"><div id="tv"></div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const tv = $("#tv");
+const state = {
+  screen: "steps", status: "ready", net: "4", name: "Alex TV", from: "Alex's iPhone", price: "$6.99",
+  plan: "free", trial: 42, session: 13, upright: true,
+  prefs: { boot: false, launch: false, blur: true, shrink: false, wifi: true, pin: false, takeover: false },
+  pin: "4831",
+};
+
+/* Capture mode for store screenshots (design/play-store/render.py):
+   ?capture&screen=steps&status=ready&name=…&from=…&plan=free&trial=42&session=13&upright=1&net=4&warn=1&time=2026-10-23T20:30
+   hides the control bar, freezes the clock, uses en-US formatting and shows the iPhone steps as a still. */
+const Q = new URLSearchParams(location.search);
+const CAPTURE = { on: Q.has("capture"), time: Q.get("time") };
+const LOC = CAPTURE.on ? "en-US" : [];
+if (CAPTURE.on) {
+  for (const k of ["screen", "status", "net", "name", "from", "price", "plan"]) if (Q.has(k)) state[k] = Q.get(k);
+  for (const k of ["trial", "session"]) if (Q.has(k)) state[k] = +Q.get(k);
+  if (Q.has("upright")) state.upright = Q.get("upright") === "1";
+  if (Q.has("warn")) state.prefs.wifi = Q.get("warn") === "1";
+  document.documentElement.classList.add("capture");
+}
+
+/* Stand-in for the mirrored iPhone picture: a dusk landscape, centred so a portrait crop still works. */
+const scene = () => `<svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14203D"/><stop offset=".45" stop-color="#5B4B7A"/><stop offset=".72" stop-color="#E0866A"/><stop offset="1" stop-color="#F6C07F"/></linearGradient>
+    <radialGradient id="sun" cx="480" cy="236" r="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE6B8"/><stop offset=".18" stop-color="#FFD39A"/><stop offset=".19" stop-color="#FFC98A" stop-opacity=".55"/><stop offset="1" stop-color="#FFB070" stop-opacity="0"/></radialGradient>
+    <linearGradient id="lake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8E6A7E"/><stop offset="1" stop-color="#1A1626"/></linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#sky)"/>
+  <circle cx="480" cy="236" r="150" fill="url(#sun)"/>
+  <path d="M0 330 L120 268 L210 300 L330 222 L420 286 L520 240 L610 292 L720 230 L830 284 L960 250 V400 H0Z" fill="#7A5F86" opacity=".75"/>
+  <path d="M0 360 L90 318 L190 346 L300 290 L390 338 L470 306 L560 352 L680 296 L790 344 L880 316 L960 334 V400 H0Z" fill="#4A3A5E"/>
+  <path d="M0 382 L140 350 L260 372 L380 344 L500 378 L640 348 L760 374 L880 352 L960 366 V400 H0Z" fill="#2B2238"/>
+  <rect y="398" width="960" height="142" fill="url(#lake)"/>
+  <rect x="440" y="404" width="80" height="3" rx="1.5" fill="#FFD9A6" opacity=".7"/><rect x="455" y="416" width="50" height="2" rx="1" fill="#FFD9A6" opacity=".45"/><rect x="466" y="428" width="28" height="2" rx="1" fill="#FFD9A6" opacity=".3"/>
+</svg>`;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const curly = s => s.replace(/'/g, "’");
+const now = () => CAPTURE.time ? new Date(CAPTURE.time) : new Date();
+const clock = d => d.toLocaleTimeString(LOC, { hour: "numeric", minute: "2-digit" });
+const phoneClock = d => clock(d).replace(/\s?[AP]M$/i, ""); // iPhone status bar: no AM/PM
+const longDate = d => d.toLocaleDateString(LOC, { weekday: "long", day: "numeric", month: "long" });
+const nameSize = n => n.length <= 12 ? 76 : n.length <= 20 ? 54 : 38;
+/* Plans:
+   trial     – the first 60 minutes of mirroring after install: Full HD, 60 fps, no session limit.
+   free      – afterwards: 720p, 30 fps, each session stops after 15 minutes; reconnecting starts a new one.
+   unlimited – the one-time purchase: Full HD, 60 fps, no limits.
+   Warnings appear 2 minutes before the trial or a free session ends. Audio-only streaming is never limited. */
+const TRIAL_MIN = 60, SESSION_MIN = 15, WARN_MIN = 2;
+const unlimited = () => state.plan === "unlimited";
+const quality = () => state.plan === "free" ? "720p · 30 fps" : "Full HD · 60 fps";
+const sessionLeft = () => Math.max(0, SESSION_MIN - state.session);
+const mins = n => n === 1 ? "1 minute" : `${n} minutes`;
+const upgrade = () => `Go unlimited${state.price ? `<span class="sub">${esc(state.price)} once</span>` : ""}`;
+const reduced = () => CAPTURE.on || $("#rm").checked || matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* Beamsy mark: the phone shows through the TV's screen. Monochrome, takes currentColor. */
+let markId = 0;
+const mark = px => { const id = "mk" + ++markId; return `<svg class="mark" width="${px}" height="${px}" viewBox="0 0 100 100" aria-hidden="true">
+  <mask id="${id}"><rect width="100" height="100" fill="#fff"/><rect x="18" y="42" width="48" height="26" rx="4" fill="#000"/></mask>
+  <rect x="58" y="10" width="30" height="52" rx="8" fill="currentColor" fill-opacity=".42"/>
+  <rect x="10" y="34" width="64" height="42" rx="9" fill="currentColor" mask="url(#${id})"/>
+  <rect x="29" y="82" width="26" height="6" rx="3" fill="currentColor"/></svg>`; };
+
+const icon = {
+  wifi: s => `<svg class="wifi" width="${s}" height="${s * .75}" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0M4 7a6 6 0 0 1 8 0"/><circle cx="8" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>`,
+  mirror: `<svg width="15" height="12" viewBox="0 0 15 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="9" height="7" rx="1.5"/><path d="M5 11h8.5a.5.5 0 0 0 .5-.5V5"/></svg>`,
+  tv: `<svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.4"><rect x=".7" y=".7" width="11.6" height="7.6" rx="1.5"/><path d="M4 10.3h5" stroke-linecap="round"/></svg>`,
+  tick: `<svg class="tick" width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4.6 4 7.6 10 1.4"/></svg>`,
+  chev: `<svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m1 1 5 5-5 5"/></svg>`,
+  clock: `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="6.2"/><path d="M7.5 4.2v3.5l2.3 1.4"/></svg>`,
+  warn: `<svg width="15" height="14" viewBox="0 0 15 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 1.6 1.2 11a1 1 0 0 0 .9 1.5h10.8a1 1 0 0 0 .9-1.5L8.4 1.6a1 1 0 0 0-1.8 0Z"/><path d="M7.5 5.3v3"/><circle cx="7.5" cy="10.3" r=".4" fill="currentColor"/></svg>`,
+};
+const bars = lit => `<span class="bars">${[4, 6, 8, 10].map((h, i) => `<i class="${i < lit ? "on" : ""}" style="height:${h}px"></i>`).join("")}</span>`;
+
+/* ---------- home ---------- */
+let step = 1, stepTimer;
+const cycling = () => state.screen === "steps" && state.status === "ready" && !reduced();
+const STEP_MS = [0, 2600, 2600, 3800];
+function schedule() {
+  clearTimeout(stepTimer);
+  if (!cycling()) return;
+  stepTimer = setTimeout(() => {
+    step = step % 3 + 1;
+    tv.querySelector(".home")?.setAttribute("data-step", step);
+    schedule();
+  }, STEP_MS[step]);
+}
+
+function statusLine() {
+  const s = state.status, from = esc(curly(state.from || "your iPhone"));
+  const [c, text] = {
+    ready: ["var(--ready)", `<b>Ready</b> for iPhones on this network`],
+    connecting: [null, `Connecting to <b>${from}</b>…`],
+    permission: ["var(--attention)", `Beamsy needs permission to find iPhones on your network`],
+    offline: ["var(--attention)", `This TV isn’t connected to a network`],
+    failed: ["var(--failure)", `iPhones can’t find this TV right now`],
+  }[s];
+  return `<div class="status t-callout">${c ? `<span class="dot" style="--dc:${c}"></span>` : `<span class="spin"></span>`}<span>${text}</span></div>`;
+}
+
+function net() {
+  const online = state.net !== "off", link = online ? +state.net : null;
+  if (!online) return `<div class="net warn t-caption">${icon.warn}No network</div>`;
+  if (link === 0) return `<div class="net t-caption">Connected by Ethernet</div>`;
+  if (link === 1 && state.prefs.wifi) return `<div class="net warn t-caption">${bars(1)}Weak Wi-Fi · mirroring may stutter</div>`;
+  return `<div class="net t-caption">${bars(link)}Wi-Fi · ${["Weak", "Fair", "Good", "Strong"][link - 1]}</div>`;
+}
+
+function device() {
+  const connecting = state.status === "connecting";
+  return `<div class="device" aria-hidden="true"><div class="screen">
+    <div class="sb"><span class="time">${phoneClock(now())}</span><span class="island"></span>
+      <span class="icons"><span style="position:relative">${icon.wifi(11)}<i class="ring"></i></span><span class="batt"></span></span></div>
+    <div class="apps">${"<i></i>".repeat(16)}</div>
+    <div class="dock">${"<i></i>".repeat(4)}</div>
+    <div class="cc"><i class="a"><b></b><b></b><b></b><b></b></i><i class="b"></i><i class="r"></i><i class="m">${icon.mirror}</i>
+      <i class="l"></i><i class="v"></i><i class="t"></i><i class="c"></i><i class="d"></i><i class="e"></i><i class="f"></i></div>
+    <div class="sheet"><h4>Screen Mirroring</h4>
+      <div class="row">${icon.tv}<span>${esc(state.name)}</span>${connecting ? `<span class="spin"></span>` : icon.tick}</div></div>
+    <i class="touch swipe"></i><i class="touch tap1"></i><i class="touch tap2"></i>
+  </div></div>`;
+}
+
+function home() {
+  const s = state.status, hasAction = s === "permission" || s === "failed", animate = cycling();
+  if (!animate) step = s === "ready" || s === "connecting" ? 3 : 1; // a problem state never shows the "done" tick
+  const lead = s === "offline" ? "Waiting for a network" : "Mirror your iPhone to";
+  const stepText = [
+    "Connect your iPhone to the same Wi-Fi as this TV",
+    "Swipe down from the top-right to open Control Center",
+    `Tap Screen Mirroring, then choose <q>${esc(state.name)}</q>`,
+  ];
+  // Quiet on purpose: people buy at the end of a session, not from the home screen. Settings has the upgrade too.
+  const plan = {
+    unlimited: `<span class="plan t-caption">Unlimited · Full HD · 60 fps</span>`,
+    trial: `<span class="plan t-caption">Free trial · Full HD · 60 fps</span>
+      <span class="allow t-caption num-t"><span class="meter"><i style="width:${state.trial / TRIAL_MIN * 100}%"></i></span>${state.trial} min left</span>`,
+    free: `<span class="plan t-caption">Free · 720p · 30 fps · ${SESSION_MIN} min at a time</span>`,
+  }[state.plan];
+  return `<div class="layer home ${animate ? "" : "static"} ${s === "ready" ? "" : s === "connecting" ? "connecting" : "inactive"}" data-step="${step}">
+    <div class="header">${mark(22)}<span class="word">Beamsy</span></div>
+    <div class="lede">
+      <div class="lead t-body">${lead}</div>
+      <div class="name t-display" style="font-size:${nameSize(state.name)}px">${esc(state.name)}</div>
+      ${statusLine()}
+      ${s === "offline" ? `<div class="note t-caption">Connect it to Wi-Fi or Ethernet in the TV’s settings.</div>` : ""}
+      ${hasAction ? `<button class="btn lg action" data-act="retry" data-focus>${s === "failed" ? "Try again" : "Allow access"}</button>` : ""}
+      <ol class="steps-list">${stepText.map((t, i) => `<li class="step" data-n="${i + 1}"><span class="n">${i + 1}</span><span>${t}</span></li>`).join("")}</ol>
+    </div>
+    ${device()}
+    <div class="footer">${plan}${net()}<button class="btn" data-act="settings" ${hasAction ? "" : "data-focus"}>Settings</button></div>
+  </div>`;
+}
+
+/* ---------- screensaver / audio ---------- */
+function saver(audio) {
+  const d = now(), t = Math.floor(d / 60000);
+  const drift = `translate(${(t * 37) % 41 - 20}px, ${(t * 53) % 31 - 15}px)`; // keeps pixels moving: no burn-in
+  const right = audio
+    ? `<span class="eq">${[5, 11, 8].map(h => `<i style="height:${h}px"></i>`).join("")}</span><span>Playing audio from ${esc(curly(state.from || "your iPhone"))}</span>`
+    : `<span>Ready for Screen Mirroring</span>`;
+  return `<div class="layer saver">
+    <div class="mid" style="transform:${drift}"><div class="big num-t">${clock(d)}</div><div class="day">${longDate(d)}</div></div>
+    <div class="foot t-caption"><span style="color:var(--text-2)">${mark(16)}</span><b>${esc(state.name)}</b><i class="sep"></i>${right}</div>
+  </div>`;
+}
+
+/* ---------- mirroring ---------- */
+function mirror(quiet) {
+  // Each toast shows for 8 s. The session warning is the only one that takes OK (opens the purchase).
+  const toast = (ic, title, body, cls = "") => `<div class="toast material"><span class="ic ${cls}">${ic}</span><div><b>${title}</b><span>${body}</span></div></div>`;
+  const left = sessionLeft();
+  const time =
+    state.plan === "trial" && state.trial === 0 ? toast(icon.clock, "Your free hour of Full HD is over", `You’re on Free now: 720p, ${SESSION_MIN} minutes at a time`, "neutral")
+    : state.plan === "trial" && state.trial <= WARN_MIN ? toast(icon.clock, `Your free hour of Full HD ends in ${mins(state.trial)}`, `Then 720p, ${SESSION_MIN} minutes at a time`, "neutral")
+    : state.plan === "free" && left > 0 && left <= WARN_MIN ? toast(icon.clock, `${mins(left)} left in this free session`, `Press OK to go unlimited${state.price ? ` · ${esc(state.price)} once` : ""}`)
+    : "";
+  const wifi = state.prefs.wifi ? `<div class="toast material"><span class="ic">${bars(1)}</span><div><b>Weak Wi-Fi</b><span>The picture may stutter</span></div></div>` : "";
+  const ambient = state.upright && state.prefs.blur ? `<div class="ambient">${scene()}</div>` : "";
+  return `<div class="layer mirror">${ambient}<div class="pic ${state.upright ? "" : "wide"}">${scene()}</div></div>${quiet ? "" : `<div class="toasts">${time}${wifi}</div>`}`;
+}
+
+function ended() {
+  return `<div class="layer scrim" style="background:rgba(0,0,0,.72)"></div><div class="dialog material ended">
+    <div class="from t-callout">Mirroring paused</div>
+    <h2 class="t-title">Free sessions last ${SESSION_MIN} minutes</h2>
+    <p class="t-callout">Reconnect from ${esc(curly(state.from || "your iPhone"))} to keep going, or go unlimited to watch without breaks, in Full HD at 60 fps.</p>
+    <div class="row"><button class="btn lg" data-act="buy" data-focus>${upgrade()}</button><button class="btn lg" data-act="home">Not now</button></div>
+  </div>`;
+}
+
+/* ---------- overlays ---------- */
+function settings() {
+  const p = state.prefs;
+  const row = (label, value, act, focus) => `<button class="row-s" data-act="${act}" ${focus ? "data-focus" : ""}><span class="label">${label}</span><span class="value">${value}</span></button>`;
+  const link = t => `${esc(t)}${icon.chev}`;
+  const pref = (label, key) => row(label, p[key] ? `<span class="on">On</span>` : "Off", "toggle:" + key);
+  return `<div class="layer scrim"></div><div class="settings material">
+    <header><h2 class="t-title">Settings</h2><div class="t-caption">${esc(state.name)} · Beamsy 1.0.0</div></header>
+    <div class="list">
+      <div class="section">This TV</div>
+      ${row("TV name", link(state.name), "rename", true)}
+      ${pref("Open when the TV turns on", "boot")}
+      ${pref("Open when an iPhone connects", "launch")}
+      <div class="section">Plan</div>
+      ${unlimited()
+        ? row("Beamsy Unlimited", "Owned", "")
+        : (state.plan === "trial"
+            ? row("Free trial", `<span class="num-t">${state.trial} min of Full HD left</span>`, "")
+            : row("Free plan", `${SESSION_MIN} min sessions`, ""))
+          + row("Go unlimited", link(`No limits, Full HD${state.price ? ` · ${state.price}` : ""}`), "buy")}
+      <div class="section">Picture</div>
+      ${row("Picture quality", quality(), "")}
+      ${pref("Blur the sides of upright video", "blur")}
+      ${pref("Fit the whole picture on screen", "shrink")}
+      ${pref("Warn about weak Wi-Fi", "wifi")}
+      <div class="section">Privacy</div>
+      ${pref("Require a code to mirror", "pin")}
+      ${pref("Let another iPhone take over", "takeover")}
+    </div>
+    <div class="foot-hint t-caption">Press Back to close</div>
+  </div>`;
+}
+
+function pin() {
+  const from = curly(state.from || "An iPhone");
+  return `<div class="layer scrim"></div><div class="dialog material pin">
+    <div class="from t-callout">${esc(from)} wants to mirror</div>
+    <h2 class="t-title">Enter this code on your iPhone</h2>
+    <div class="digits num-t">${[...state.pin].map(d => `<span>${d}</span>`).join("")}</div>
+    <div class="foot-hint t-caption">Press Back to hide the code</div>
+  </div>`;
+}
+
+function rename() {
+  return `<div class="layer scrim"></div><div class="dialog material rename">
+    <h2 class="t-title">Rename this TV</h2>
+    <p class="t-callout">iPhones show this name in Screen Mirroring.</p>
+    <input id="field" class="field" value="${esc(state.name)}" maxlength="60" spellcheck="false" data-focus>
+    <div class="row"><span class="count t-caption num-t"></span>
+      <button class="btn lg" data-act="close">Cancel</button>
+      <button class="btn lg" data-act="save">Save</button></div>
+  </div>`;
+}
+
+/* ---------- render ---------- */
+function render() {
+  const s = state.screen;
+  tv.classList.toggle("rm", reduced());
+  const base = s === "saver" ? saver(false) : s === "audio" ? saver(true) : s === "mirror" ? mirror() : s === "ended" ? mirror(true) : home();
+  const overlay = { settings, pin, rename, ended }[s];
+  tv.innerHTML = base + (overlay ? overlay() : "");
+  if (s === "rename") syncField();
+  const f = tv.querySelector(overlay ? ".settings [data-focus], .dialog [data-focus]" : "[data-focus]");
+  f?.focus(); if (CAPTURE.on) f?.classList.add("is-focus");
+  schedule();
+}
+
+function syncField() {
+  const f = $("#field"), n = [...f.value.trim()].length, ok = n > 0 && n <= 40;
+  f.classList.toggle("bad", !ok);
+  const c = tv.querySelector(".count"); c.textContent = ok ? `${n} of 40` : n ? `${n} of 40 · too long` : "Enter a name";
+  c.classList.toggle("bad", !ok);
+  tv.querySelector('[data-act="save"]').disabled = !ok;
+}
+
+tv.addEventListener("input", e => { if (e.target.id === "field") syncField(); });
+tv.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (!act) return;
+  if (act.startsWith("toggle:")) {
+    const k = act.slice(7); state.prefs[k] = !state.prefs[k];
+    const i = [...tv.querySelectorAll(".row-s")].indexOf(e.target.closest(".row-s"));
+    const top = tv.querySelector(".settings .list").scrollTop;
+    render(); tv.querySelector(".settings .list").scrollTop = top; tv.querySelectorAll(".row-s")[i]?.focus({ preventScroll: true }); return;
+  }
+  if (act === "settings") state.screen = "settings";
+  if (act === "rename") state.screen = "rename";
+  if (act === "close") state.screen = "settings";
+  if (act === "save") { state.name = $("#field").value.trim(); $("#name").value = state.name; state.screen = "settings"; }
+  if (act === "buy") { state.plan = "unlimited"; $("#plan").value = "unlimited"; if (state.screen === "ended") state.screen = "steps"; } // stands in for the Play purchase sheet
+  if (act === "home") state.screen = "steps";
+  if (act === "retry") { state.status = "ready"; $("#status").value = "ready"; }
+  $("#screen").value = state.screen;
+  render();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" || e.key === "Backspace" && e.target.tagName !== "INPUT") {
+    state.screen = state.screen === "rename" ? "settings" : "steps"; $("#screen").value = state.screen; render();
+  }
+});
+
+for (const id of ["screen", "status", "net", "name", "from", "price", "plan"]) $("#" + id).addEventListener("input", e => { state[id] = e.target.value; if (id === "status") step = 1; render(); });
+for (const [id, max] of [["trial", TRIAL_MIN], ["session", SESSION_MIN]]) $("#" + id).addEventListener("input", e => { state[id] = Math.min(max, Math.max(0, +e.target.value || 0)); render(); });
+for (const id of ["upright", "rm"]) $("#" + id).addEventListener("change", e => { state[id] = e.target.checked; render(); });
+
+function fit() {
+  const v = $("#viewport");
+  tv.style.transform = `scale(${Math.min(v.clientWidth / 960, v.clientHeight / 540)})`;
+}
+addEventListener("resize", fit);
+setInterval(() => {
+  if (!["steps", "saver", "audio"].includes(state.screen)) return;
+  const big = tv.querySelector(".big"); if (big) big.textContent = clock(now());
+  const sb = tv.querySelector(".sb .time"); if (sb) sb.textContent = phoneClock(now());
+  if (state.screen !== "steps") { const mid = tv.querySelector(".mid"), t = Math.floor(now() / 60000); mid.style.transform = `translate(${(t * 37) % 41 - 20}px, ${(t * 53) % 31 - 15}px)`; }
+}, 15_000);
+fit(); render();
+</script>
+</body>
+</html>

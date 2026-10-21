@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beamsy UI</title>
+<!--
+  HTML copy of app/src/main/kotlin/io/github/jqssun/airplay/ui/HomeScreen.kt (Concept B).
+  Units are dp: the stage is the TV's 960×540 dp (1920×1080 px at density 320), scaled to the window.
+  Edit the tokens in :root, then port the values back to HomeScreen.kt (same names).
+-->
+<style>
+@font-face { font-family: "Open Sauce Sans"; font-weight: 400; src: url("../app/src/main/res/font/open_sauce_sans_regular.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 500; src: url("../app/src/main/res/font/open_sauce_sans_medium.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 600; src: url("../app/src/main/res/font/open_sauce_sans_semibold.ttf"); }
+@font-face { font-family: "Open Sauce Sans"; font-weight: 700; src: url("../app/src/main/res/font/open_sauce_sans_bold.ttf"); }
+
+:root {
+  /* HomeScreen.kt colours */
+  --night: #0A0A18;
+  --ink: #FFFFFF;
+  --violet: #8B5CF6;
+  --lilac: #A78BFA;
+  --lilac-soft: #C4B5FD;
+  --plum: #2E1065;
+  --panel: #15122B;
+  --green: #34D399;
+  --amber: #FFC27A;
+  --red: #F87171;
+  /* wallpaper glows: colour, alpha, centre x/y, radius × 540 */
+  --glow-violet: rgba(109, 40, 217, .55);
+  --glow-teal: rgba(14, 165, 164, .32);
+  --glow-pink: rgba(219, 39, 119, .22);
+  --veil: rgba(5, 4, 12, .72);
+  --font: "Open Sauce Sans", "Figtree", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; color: var(--ink); font-family: var(--font); }
+body { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ---- control bar (not part of the TV UI) ---- */
+#bar {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+  padding: 8px 16px; background: #111; border-bottom: 1px solid #222;
+  font: 500 12px/1.2 system-ui, sans-serif; color: #bbb;
+}
+#bar label { display: flex; gap: 6px; align-items: center; }
+#bar select, #bar input[type=text] { background: #1c1c1c; color: #eee; border: 1px solid #333; border-radius: 4px; padding: 3px 6px; font: inherit; }
+#bar .hint { color: #666; }
+#viewport { flex: 1; display: grid; place-items: center; overflow: hidden; }
+
+/* ---- the TV: 960×540 dp ---- */
+#tv {
+  width: 960px; height: 540px; position: relative; overflow: hidden;
+  transform-origin: center; background: #000;
+}
+.layer { position: absolute; inset: 0; }
+.wallpaper {
+  background:
+    radial-gradient(circle 513px at 50% 42%, var(--glow-violet), transparent),
+    radial-gradient(circle 324px at 86% 78%, var(--glow-teal), transparent),
+    radial-gradient(circle 270px at 8% 82%, var(--glow-pink), transparent),
+    var(--night);
+}
+.wallpaper.dim { opacity: 1; }
+.wallpaper.dim::before { content: ""; position: absolute; inset: 0; background: rgba(10, 10, 24, .5); }
+.a7 { color: rgba(255, 255, 255, .7); }
+
+/* Beamsy mark (100-unit grid, same as BeamsyMark) */
+.mark { display: block; flex: none; }
+
+/* header */
+.header { display: flex; align-items: center; width: 100%; }
+.header .word { margin-left: 8px; font-size: 17px; font-weight: 700; }
+.header .date { margin-left: auto; font-size: 16px; font-weight: 500; color: rgba(255,255,255,.7); }
+.header .sep { margin: 0 10px; width: 1px; height: 17px; background: rgba(255,255,255,.3); }
+.header .clock { font-size: 22px; font-weight: 600; }
+
+/* pill (Pill composable) */
+.pill {
+  appearance: none; border: .75px solid rgba(255,255,255,.16); border-radius: 999px;
+  background: rgba(255,255,255,.1); color: var(--ink);
+  padding: 7px 14px; font: 600 12px/1.25 var(--font); cursor: pointer; outline: none; white-space: nowrap;
+}
+.pill.primary { background: var(--violet); }
+.pill:focus, .pill.focus { background: var(--ink); color: var(--plum); font-weight: 700; border: 1.5px solid var(--lilac); }
+.pill:disabled { opacity: .45; cursor: default; }
+.pill.lg { font-size: 14px; }
+
+/* bars (Bars composable) */
+.bars { display: inline-flex; align-items: flex-end; }
+.bars i { width: 2.5px; margin-right: 1.5px; border-radius: 1px; background: rgba(255,255,255,.22); }
+.bars i.on { background: var(--c, rgba(255,255,255,.9)); }
+
+/* steps screen */
+.steps { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 32px 48px 28px; }
+.centre { display: flex; flex-direction: column; align-items: center; }
+.lead { font-size: 16px; font-weight: 500; color: rgba(255,255,255,.7); }
+.name { font-weight: 700; letter-spacing: -.03em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 864px; }
+.status {
+  margin-top: 14px; display: flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.08);
+  border: .75px solid var(--sc); font-size: 13px; font-weight: 500; color: rgba(255,255,255,.9);
+}
+.status.ready { border-color: rgba(255,255,255,.14); }
+.status.connecting { background: rgba(139,92,246,.2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dc); }
+.status.ready .dot { box-shadow: 0 0 0 3.5px rgba(52,211,153,.35); }
+.spin { width: 11px; height: 11px; border: 2px solid var(--lilac); border-right-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.note { margin-top: 12px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,.75); }
+.action { margin-top: 12px; }
+.cards { display: flex; gap: 14px; margin-top: 40px; }
+.cards.faded { opacity: .3; }
+.card-step {
+  width: 276px; display: flex; align-items: center; gap: 12px;
+  padding: 15px 18px 15px 16px; border-radius: 14px;
+  background: rgba(255,255,255,.06); border: .75px solid rgba(255,255,255,.12);
+}
+.card-step.last { background: rgba(139,92,246,.22); border-color: rgba(167,139,250,.6); }
+.num { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.12); font-size: 15px; font-weight: 700; }
+.last .num { background: var(--lilac); }
+.card-step span { font-size: 16px; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.footer { position: relative; width: 100%; height: 30px; display: flex; align-items: center; }
+.footer .left { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.7); }
+.footer .wifi { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.footer .right { margin-left: auto; }
+
+/* screensaver */
+.saver { padding: 32px 48px 36px; }
+.saver .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.saver .big { font-size: 130px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: rgba(255,255,255,.92); }
+.saver .day { font-size: 22px; font-weight: 500; color: rgba(255,255,255,.55); }
+.saver .foot { position: absolute; left: 0; right: 0; bottom: 36px; display: flex; justify-content: center; align-items: center; font-size: 14px; }
+.saver .foot b { margin-left: 8px; font-weight: 600; color: rgba(255,255,255,.6); }
+.saver .foot .g { margin: 0 8px; width: 5px; height: 5px; border-radius: 50%; background: rgba(52,211,153,.8); }
+.saver .foot span { font-weight: 500; color: rgba(255,255,255,.45); }
+
+/* mirroring stand-in + weak Wi-Fi note */
+.mirror { background: #000; display: grid; place-items: center; }
+.mirror .phone { width: 248px; height: 540px; background: linear-gradient(160deg, #3b2a6b, #10222f); display: grid; place-items: center; color: rgba(255,255,255,.4); font-size: 14px; }
+.mirror.blur { background: radial-gradient(circle at 50% 50%, #2a2045, #07070c); }
+.weak {
+  position: absolute; top: 24px; right: 28px; display: flex; align-items: center; gap: 9px;
+  padding: 9px 14px 9px 12px; border-radius: 9px; background: rgba(0,0,0,.62); border: .75px solid rgba(255,194,122,.35);
+}
+.weak b { display: block; color: var(--amber); font-size: 13px; font-weight: 600; }
+.weak span { color: rgba(255,255,255,.75); font-size: 11px; font-weight: 500; }
+
+/* overlays */
+.veil { background: var(--veil); }
+.card {
+  position: absolute; border-radius: 20px; background: rgba(21,18,43,.97);
+  border: .75px solid rgba(255,255,255,.1); padding: 32px 40px;
+}
+.card.centered { left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
+.keyhint { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.5); }
+.keyhint kbd { font: 600 10px var(--font); color: rgba(255,255,255,.7); border: .75px solid rgba(255,255,255,.3); border-radius: 4px; padding: 2px 6px; }
+
+.pin h2 { font-size: 22px; font-weight: 600; }
+.digits { display: flex; gap: 12px; margin: 16px 0; }
+.digits div { width: 75px; height: 92px; border-radius: 14px; display: grid; place-items: center; background: rgba(255,255,255,.07); border: .75px solid rgba(255,255,255,.16); font-size: 60px; font-weight: 700; }
+.pin p { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.65); margin-bottom: 16px; }
+
+.rename { left: 50%; top: 24px; transform: translateX(-50%); width: 540px; }
+.rename h2 { font-size: 24px; font-weight: 700; }
+.rename p { margin-top: 4px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,.6); }
+.rename input {
+  margin-top: 16px; width: 100%; height: 56px; padding: 0 16px; border-radius: 10px; outline: none;
+  background: rgba(255,255,255,.08); border: 2px solid var(--lilac); color: var(--ink); caret-color: var(--lilac);
+  font: 600 21px var(--font);
+}
+.rename input.bad { border-color: var(--red); }
+.rename .row { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+.rename .count { flex: 1; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.5); }
+.rename .count.bad { color: var(--red); }
+
+.settings {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 410px; background: var(--panel);
+  box-shadow: inset 1px 0 rgba(255,255,255,.08); padding: 24px 28px 18px; display: flex; flex-direction: column;
+}
+.settings h2 { font-size: 26px; font-weight: 700; }
+.settings .sub { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settings .list { flex: 1; overflow-y: auto; padding-top: 8px; scrollbar-width: none; }
+.section { padding: 10px 0 4px; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.row-s {
+  width: 100%; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; min-height: 34px;
+  padding: 6px 12px 6px 14px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1.25px solid transparent;
+  color: rgba(255,255,255,.92); font: 600 14px var(--font); text-align: left; cursor: pointer; outline: none;
+}
+.row-s:focus { background: rgba(255,255,255,.14); border-color: var(--lilac); color: var(--ink); }
+.row-s .label { flex: 1; }
+.value { display: flex; align-items: center; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.6); white-space: nowrap; }
+.value.accent { color: var(--lilac-soft); font-weight: 600; }
+.value .chev { margin-left: 2px; color: rgba(255,255,255,.5); font-size: 16px; line-height: 1; }
+.switch { flex: none; width: 36px; height: 20px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.18); display: flex; }
+.switch::after { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); }
+.switch.on { background: var(--violet); justify-content: flex-end; }
+.settings .keyhint { margin-top: 12px; }
+
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <label>Screen
+    <select id="screen">
+      <option value="steps">Steps (home)</option>
+      <option value="settings">Settings</option>
+      <option value="rename">Rename TV</option>
+      <option value="pin">PIN code</option>
+      <option value="saver">Screensaver</option>
+      <option value="audio">Audio only</option>
+      <option value="mirror">Mirroring + weak Wi-Fi</option>
+    </select>
+  </label>
+  <label>Status
+    <select id="status">
+      <option value="ready">Ready</option>
+      <option value="connecting">Connecting</option>
+      <option value="permission">Needs permission</option>
+      <option value="offline">No network</option>
+      <option value="failed">Can't be found</option>
+    </select>
+  </label>
+  <label>Network
+    <select id="net">
+      <option value="4">Wi-Fi Strong</option><option value="3">Wi-Fi Good</option>
+      <option value="2">Wi-Fi Fair</option><option value="1">Wi-Fi Weak</option>
+      <option value="0">Ethernet</option><option value="off">Not connected</option>
+    </select>
+  </label>
+  <label>TV name <input id="name" type="text" value="Alex TV" maxlength="40" size="14"></label>
+  <label>iPhone <input id="from" type="text" value="Alex's iPhone" size="12"></label>
+  <label>Price <input id="price" type="text" value="$6.99" size="6"></label>
+  <label><input id="unlocked" type="checkbox"> Full HD owned</label>
+  <label><input id="upright" type="checkbox" checked> Upright iPhone</label>
+  <span class="hint">Tab / Shift+Tab moves focus like the D-pad</span>
+</div>
+
+<div id="viewport"><div id="tv"></div></div>
+
+<template id="markTpl">
+  <svg class="mark" viewBox="0 0 100 100">
+    <defs><linearGradient id="pic" x1="20" x2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#A78BFA"/></linearGradient></defs>
+    <rect x="58" y="10" width="30" height="52" rx="8" fill="#fff" fill-opacity=".42"/>
+    <rect x="10" y="34" width="64" height="42" rx="9" fill="#fff"/>
+    <rect x="29" y="82" width="26" height="6" rx="3" fill="#fff"/>
+    <rect x="20" y="43" width="44" height="24" rx="5" fill="url(#pic)"/>
+  </svg>
+</template>
+
+<script>
+const $ = s => document.querySelector(s);
+const tv = $("#tv");
+const state = {
+  screen: "steps", status: "ready", net: "4", name: "Alex TV", from: "Alex's iPhone", price: "$6.99",
+  unlocked: false, upright: true,
+  prefs: { boot: false, launch: false, blur: true, shrink: false, wifi: true, pin: false, takeover: false },
+  pin: "4831",
+};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const mark = px => $("#markTpl").innerHTML.replace('class="mark"', `class="mark" width="${px}" height="${px}"`);
+const bars = (lit, color) => `<span class="bars" style="--c:${color}">${[3, 5, 7, 9].map((h, i) => `<i class="${i < lit ? "on" : ""}" style="height:${h}px"></i>`).join("")}</span>`;
+const now = () => new Date();
+const clock = d => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const shortDate = d => d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+const longDate = d => d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+const nameSize = n => n.length <= 12 ? 90 : n.length <= 20 ? 64 : 44;
+
+function header() {
+  const d = now();
+  return `<div class="header">${mark(25)}<span class="word">Beamsy</span>
+    <span class="date">${shortDate(d)}</span><span class="sep"></span><span class="clock">${clock(d)}</span></div>`;
+}
+
+function statusPill() {
+  const from = state.from || "your iPhone";
+  const [c, text] = {
+    ready: ["var(--green)", "Ready · waiting for your iPhone"],
+    connecting: ["var(--lilac)", `Connecting to ${esc(from)}…`],
+    permission: ["var(--amber)", "One more step before iPhones can see this TV"],
+    offline: ["var(--amber)", "This TV isn’t connected to a network"],
+    failed: ["var(--red)", "iPhones can’t find this TV right now"],
+  }[state.status];
+  const icon = state.status === "connecting" ? `<span class="spin"></span>` : `<span class="dot" style="--dc:${c}"></span>`;
+  return `<div class="status ${state.status}" style="--sc:color-mix(in srgb, ${c} 50%, transparent)">${icon}${text}</div>`;
+}
+
+function wifi() {
+  const online = state.net !== "off", link = online ? +state.net : null, warn = state.prefs.wifi;
+  let text, color = "rgba(255,255,255,.7)", lit = link;
+  if (!online) { text = "Not connected"; color = "var(--amber)"; lit = 0; }
+  else if (link === 0) { text = "Connected by Ethernet"; lit = -1; }
+  else if (link === 1 && warn) { text = "Wi-Fi signal: Weak · mirroring may stutter"; color = "var(--amber)"; }
+  else text = "Wi-Fi signal: " + ["Weak", "Fair", "Good", "Strong"][link - 1];
+  const amber = color === "var(--amber)";
+  return `<div class="wifi" style="color:${color}">${lit >= 0 ? bars(lit, amber ? "var(--amber)" : "rgba(255,255,255,.9)") : ""}${text}</div>`;
+}
+
+function steps() {
+  const s = state.status, hasAction = s === "permission" || s === "failed";
+  const lead = s === "connecting" ? "Mirroring to" : s === "offline" ? "Waiting for a network" : "Mirror your iPhone to";
+  const cards = ["Connect to the same Wi-Fi", "Open Control Center", `Tap Screen Mirroring → ${esc(state.name)}`]
+    .map((t, i) => `<div class="card-step ${i === 2 ? "last" : ""}"><div class="num">${i + 1}</div><span>${t}</span></div>`).join("");
+  const left = state.unlocked ? `Full HD · Unlocked`
+    : `Free · 720p <button class="pill" data-act="buy">${state.price ? `Get Full HD · ${esc(state.price)} once` : "Get Full HD"}</button>`;
+  return `<div class="layer wallpaper steps">
+    ${header()}
+    <div class="centre">
+      <div class="lead">${lead}</div>
+      <div class="name" style="font-size:${nameSize(state.name)}px">${esc(state.name)}</div>
+      ${statusPill()}
+      ${s === "permission" ? `<div class="note">Beamsy needs permission to find iPhones on your network.</div>` : ""}
+      ${hasAction ? `<button class="pill lg action" data-focus>${s === "failed" ? "Try again" : "Allow access"}</button>` : ""}
+      <div class="cards ${s === "ready" ? "" : "faded"}">${cards}</div>
+    </div>
+    <div class="footer"><div class="left">${left}</div>${wifi()}
+      <button class="pill right" data-act="settings" ${hasAction ? "" : "data-focus"}>Settings</button></div>
+  </div>`;
+}
+
+function saver(hint) {
+  const d = now();
+  return `<div class="layer wallpaper dim saver">
+    <div class="mid"><div class="big">${clock(d)}</div><div class="day">${longDate(d)}</div></div>
+    <div class="foot">${mark(21).replace("<svg", '<svg style="opacity:.8"')}<b>${esc(state.name)}</b><i class="g"></i><span>${esc(hint)}</span></div>
+  </div>`;
+}
+
+function mirror() {
+  const weak = state.prefs.wifi ? `<div class="weak">${bars(1, "var(--amber)")}<div><b>Weak Wi-Fi connection</b><span>The picture may stutter</span></div></div>` : "";
+  const inner = state.upright ? `<div class="phone">iPhone picture</div>` : `<div class="phone" style="width:960px;height:540px">iPhone picture</div>`;
+  return `<div class="layer mirror ${state.upright && state.prefs.blur ? "blur" : ""}">${inner}</div>${weak}`;
+}
+
+function settings() {
+  const p = state.prefs;
+  const row = (label, control, act, focus) => `<button class="row-s" data-act="${act}" ${focus ? "data-focus" : ""}><span class="label">${label}</span>${control}</button>`;
+  const value = (t, accent, chev = true) => `<span class="value ${accent ? "accent" : ""}">${esc(t)}${chev ? `<span class="chev">›</span>` : ""}</span>`;
+  const sw = key => `<span class="switch ${p[key] ? "on" : ""}"></span>`;
+  const pref = (label, key) => row(label, sw(key), "toggle:" + key);
+  return `<div class="layer veil"></div><div class="settings">
+    <h2>Settings</h2>
+    <div class="sub">Beamsy 1.0.0 · ${esc(state.name)}</div>
+    <div class="list">
+      <div class="section">This TV</div>
+      ${row("TV name", value(state.name), "rename", true)}
+      ${pref("Start Beamsy when the TV turns on", "boot")}
+      ${pref("Open when an iPhone connects", "launch")}
+      <div class="section">Picture</div>
+      ${state.unlocked ? row("Picture quality", value("Full HD", false, false), "") : row("Picture quality", value("720p · Get Full HD", true), "buy")}
+      ${pref("Blurred sides for upright iPhone", "blur")}
+      ${pref("Shrink picture to fit the screen", "shrink")}
+      ${pref("Weak Wi-Fi warnings", "wifi")}
+      <div class="section">Privacy</div>
+      ${pref("Ask for a code before mirroring", "pin")}
+      ${pref("Let another iPhone take over", "takeover")}
+    </div>
+    <div class="keyhint"><kbd>Back</kbd>to close</div>
+  </div>`;
+}
+
+function pin() {
+  const from = (state.from || "your iPhone").replace(/^./, c => c.toUpperCase());
+  return `<div class="layer veil"></div><div class="card centered pin">
+    <h2>Enter this code on your iPhone</h2>
+    <div class="digits">${[...state.pin].map(d => `<div>${d}</div>`).join("")}</div>
+    <p>${esc(from)} is asking to mirror</p>
+    <div class="keyhint"><kbd>Back</kbd>to hide the code</div>
+  </div>`;
+}
+
+function rename() {
+  return `<div class="layer veil"></div><div class="card rename">
+    <h2>Rename TV</h2>
+    <p>This is the name iPhones show in Screen Mirroring.</p>
+    <input id="field" value="${esc(state.name)}" maxlength="60" data-focus>
+    <div class="row"><span class="count"></span>
+      <button class="pill lg" data-act="close">Cancel</button>
+      <button class="pill lg primary" data-act="save">Save</button></div>
+  </div>`;
+}
+
+function render() {
+  const s = state.screen;
+  const base = s === "saver" ? saver("Ready for Screen Mirroring on your iPhone")
+    : s === "audio" ? saver(`Playing audio from ${state.from || "your iPhone"}`)
+    : s === "mirror" ? mirror() : steps();
+  const overlay = { settings, pin, rename }[s];
+  tv.innerHTML = base + (overlay ? overlay() : "");
+  if (s === "rename") syncField();
+  tv.querySelector("[data-focus]")?.focus();
+}
+
+function syncField() {
+  const f = $("#field"), t = f.value.trim(), n = [...t].length, ok = n > 0 && n <= 40;
+  f.classList.toggle("bad", !ok);
+  const c = tv.querySelector(".count"); c.textContent = `${n} / 40`; c.classList.toggle("bad", !ok);
+  tv.querySelector('[data-act="save"]').disabled = !ok;
+}
+
+tv.addEventListener("input", e => { if (e.target.id === "field") syncField(); });
+tv.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (!act) return;
+  if (act.startsWith("toggle:")) {
+    const k = act.slice(7); state.prefs[k] = !state.prefs[k];
+    const i = [...tv.querySelectorAll(".row-s")].indexOf(e.target.closest(".row-s"));
+    render(); tv.querySelectorAll(".row-s")[i]?.focus(); return;
+  }
+  if (act === "settings") state.screen = "settings";
+  if (act === "rename") state.screen = "rename";
+  if (act === "close") state.screen = "settings";
+  if (act === "save") { state.name = $("#field").value.trim(); $("#name").value = state.name; state.screen = "settings"; }
+  if (act === "buy") { state.unlocked = true; $("#unlocked").checked = true; } // stands in for the Play purchase sheet
+  render();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" || e.key === "Backspace" && e.target.tagName !== "INPUT") {
+    state.screen = state.screen === "rename" ? "settings" : "steps"; $("#screen").value = state.screen; render();
+  }
+});
+
+for (const id of ["screen", "status", "net", "name", "from", "price"]) $("#" + id).addEventListener("input", e => { state[id] = e.target.value; render(); });
+for (const id of ["unlocked", "upright"]) $("#" + id).addEventListener("change", e => { state[id] = e.target.checked; render(); });
+
+function fit() {
+  const v = $("#viewport");
+  tv.style.transform = `scale(${Math.min(v.clientWidth / 960, v.clientHeight / 540)})`;
+}
+addEventListener("resize", fit);
+setInterval(() => { if (state.screen === "steps" || state.screen === "saver" || state.screen === "audio") { const a = document.activeElement; const sel = a?.dataset?.act; render(); if (sel) tv.querySelector(`[data-act="${sel}"]`)?.focus(); } }, 30_000);
+fit(); render();
+</script>
+</body>
+</html>
