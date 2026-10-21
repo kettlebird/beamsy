@@ -33,9 +33,13 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 
 ## 3. Resolution
 
-1. Free tier (unlock app not installed): mirror a landscape video, then a portrait app (for example Settings or Safari). Expected: video is no larger than 1280x720 and has the right proportions in both (no stretching or squashing).
-2. Install the unlock app (`adb install -r` as above), close the main app, reopen it and mirror again. Expected: mirroring now runs at 1080p, and the footer says "Full HD · unlocked".
+Steps 2 and 3 use the key app (sideloaded builds). For the Play purchase, see step 4. A fresh install starts with the free trial (Full HD), so step 1 needs the trial used up: Settings › Plan says "Free plan".
+
+1. Free plan (unlock app not installed, trial used up): mirror a landscape video, then a portrait app (for example Settings or Safari). Expected: video is no larger than 1280x720 and has the right proportions in both (no stretching or squashing).
+2. Install the unlock app (`adb install -r` as above), close the main app, reopen it and mirror again. Expected: mirroring now runs at 1080p, and the footer says "Unlimited · Full HD · 60 fps".
 3. With the main app in the background (press Home), uninstall the unlock app (`adb uninstall com.beamsy.unlock`). Reopen the main app and mirror. Expected: back to 720p.
+4. Play purchase (install Beamsy from a Play testing track, with your account as a license tester): open Settings › Go unlimited (or press OK on the "2 minutes left in this free session" toast, or "Go unlimited" in the "Mirroring paused" dialog). Expected: the Google Play purchase sheet opens and works with the remote, the price shown in Settings matches the sheet, and after buying the footer says "Unlimited · Full HD · 60 fps" without reopening the app and the next mirror is 1080p. Refund the order in Play Console › Order management, reopen Beamsy. Expected: back to the free plan (or the trial, if it had minutes left).
+5. Sideloaded debug build (no Play listing): open Settings › Go unlimited. Expected: a short "Google Play isn't available right now" message, no crash.
 
 ## 4. Audio only
 
@@ -82,4 +86,8 @@ Run these on your Android TV with an iPhone on the same network. Each item has a
 
 ## 10. Soak
 
-1. Mirror on the free tier for 30 minutes (a video with sound is a good test). Expected: no time limit, no prompt or pop-up asking for payment, and no disconnect.
+1. With Unlimited (key app or purchase), mirror for 30 minutes (a video with sound is a good test). Expected: no prompt, no disconnect.
+2. Free trial (fresh install): the footer says "Free trial · Full HD · 60 fps" with the minutes left, and Settings › Plan shows "Free trial". Mirror: it is Full HD. 2 minutes before the hour is up a neutral toast says "Your free hour of Full HD ends in 2 minutes". At 0 the session carries on, a toast says "Your free hour of Full HD is over", and the footer changes to "Free · 720p · 30 fps · 15 min at a time".
+3. Free plan: mirror. Expected: 720p at 30 fps. At 13 minutes an orange toast says "2 minutes left in this free session · Press OK to go unlimited"; pressing OK on the remote while it shows opens the Play purchase. At 15 minutes mirroring stops within about 5 seconds and "Free sessions last 15 minutes" opens with "Go unlimited" focused. Reconnect from the iPhone: the dialog closes and a new 15-minute session starts.
+4. Free plan, audio only: play music from the iPhone for more than 15 minutes. Expected: it is never stopped.
+5. Free plan frame rate: mirror a fast-moving game or scrolling. Expected: the iPhone sends 30 fps (the picture is smooth but not as fluid as 60). With Unlimited, 60 fps.

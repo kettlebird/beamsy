@@ -1,16 +1,18 @@
-Mirror your iPhone to your Android TV. No ads. No subscription. No time limit.
+Mirror your iPhone to your Android TV. No ads. No subscription. Your first hour is in Full HD, free.
 
 Open Beamsy on your TV, then on your iPhone open Control Center, tap Screen Mirroring and pick your TV. There is nothing to install on the iPhone. Your screen and sound show up on the TV.
 
 FREE
-- Mirrors at up to 720p, with sound
-- No time limit, no ads, no account
+- Your first hour of mirroring is in Full HD (1080p) at 60 frames per second
+- After that: 720p at 30 frames per second, with sound, 15 minutes at a time. Reconnect to keep going
+- Music and other audio from your iPhone is never limited
+- No ads, no account
 - Upright videos and reels fill the sides with a soft blur instead of black bars
 - Shows your TV's Wi-Fi signal, and warns you when a weak connection may make the picture stutter (you can turn the warning off)
 
-FULL HD (OPTIONAL)
-- Install the separate "Beamsy Full HD Unlock" app for up to 1080p mirroring
-- $6.99, paid once. It is a one-time purchase, not a subscription
+UNLIMITED (OPTIONAL)
+- Mirror without breaks, in Full HD (1080p) at 60 frames per second
+- $6.99, paid once with an in-app purchase. It is a one-time purchase, not a subscription
 
 SETTINGS
 - Rename your TV so it is easy to spot in the list

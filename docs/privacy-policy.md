@@ -1,12 +1,12 @@
 # Beamsy privacy policy
 
-Last updated: 19 October 2026
+Last updated: 21 October 2026
 
-Beamsy is made by **Kettlebird**. This policy covers the Android TV apps **Beamsy** (`com.beamsy.app`) and **Beamsy Full HD Unlock** (`com.beamsy.unlock`).
+Beamsy is made by **Kettlebird**. This policy covers the Android TV app **Beamsy** (`com.beamsy.app`), including its Full HD purchase, and the **Beamsy Full HD Unlock** key app (`com.beamsy.unlock`) where it is offered.
 
 ## What we collect
 
-Nothing. Beamsy has no accounts, no ads, no analytics and no crash reporting. We never receive any information about you, your TV or your devices.
+Nothing reaches us. Beamsy has no accounts, no ads, no analytics and no crash reporting, and we never receive any information about you, your TV or your devices. The only information that leaves your TV for Beamsy itself is the purchase check with Google Play described under Beamsy Unlimited.
 
 ## What the app does on your network
 
@@ -16,13 +16,13 @@ Nothing. Beamsy has no accounts, no ads, no analytics and no crash reporting. We
 
 ## What stays on your TV
 
-- Your settings, such as the TV name you choose, are stored only on the TV.
+- Your settings, such as the TV name you choose, and how much of the free trial you have used are stored only on the TV.
 - A short technical log is kept on the TV to help with troubleshooting. It never leaves the TV unless you export it yourself.
 - Uninstalling Beamsy deletes all of this.
 
-## Full HD Unlock
+## Beamsy Unlimited
 
-The unlock app is bought through Google Play. Google handles the payment under Google's own privacy policy; we receive no payment or personal details. Beamsy only checks, on the TV itself, that the unlock app is installed.
+Unlimited is a one-time purchase through Google Play. Google handles the payment under Google's own privacy policy; we receive no payment or personal details. Beamsy asks Google Play on the TV whether Unlimited was bought and remembers the answer on the TV. Where it is sold as the separate unlock app instead, Beamsy only checks, on the TV itself, that the unlock app is installed.
 
 ## Children
 
