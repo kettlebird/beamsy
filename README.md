@@ -7,6 +7,7 @@ Open Beamsy on the TV, then pick the TV in Screen Mirroring on the iPhone. The a
 - **Free trial:** the first 60 minutes of mirroring after install are in Full HD at 60 fps, with no session limit.
 - **Free:** afterwards, 720p at 30 fps, and each mirroring session stops after 15 minutes (reconnect to keep going). Audio-only is never limited. Counted on the TV, see [`FreeTime.kt`](app/src/main/kotlin/io/github/jqssun/airplay/FreeTime.kt).
 - **Unlimited:** no session limit, 1080p at 60 fps. A Google Play in-app purchase, product ID `full_hd`, **$6.99, paid once** (a one-time product, not a subscription). See [`FullHd.kt`](app/src/main/kotlin/io/github/jqssun/airplay/FullHd.kt). Builds distributed outside Google Play can still be unlocked by the separate key app (`com.beamsy.unlock`), which must be signed with the same certificate.
+- Built for Android TV and Google TV. It also runs on Android phones and tablets: the TV layout is scaled to fit, in landscape (`TvStage` in `ui/Tv.kt`).
 - Works while the app is open on the TV, or all the time with Settings › "Start Beamsy when the TV turns on". iPhone only for now; Android phones are planned.
 
 ## Two Gradle modules

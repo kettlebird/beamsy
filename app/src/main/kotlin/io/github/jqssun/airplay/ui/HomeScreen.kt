@@ -96,6 +96,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -116,6 +117,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import io.github.jqssun.airplay.BoolPref
 import io.github.jqssun.airplay.FREE_FPS
@@ -859,11 +862,18 @@ private fun Toast(icon: @Composable () -> Unit, title: String, text: String, neu
 
 @Composable
 private fun Overlay(onDismiss: () -> Unit, scrim: Float = 0.55f, content: @Composable BoxScope.() -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // a dialog is its own window, which resets the density: keep the stage's (scaled on phones)
+    val stage = LocalDensity.current
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         // our own scrim replaces the window dim
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = scrim)), content = content)
+        SideEffect {
+            window?.setDimAmount(0f)
+            window?.let { WindowCompat.getInsetsController(it, it.decorView).hide(WindowInsetsCompat.Type.systemBars()) }
+        }
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = scrim)), contentAlignment = Alignment.Center) {
+            CompositionLocalProvider(LocalDensity provides stage) { Box(Modifier.size(STAGE_WIDTH, STAGE_HEIGHT), content = content) }
+        }
     }
 }
 
@@ -1012,7 +1022,7 @@ private fun SettingsPanel(
                     Plan.TRIAL -> SettingRow("Free trial", "${FreeTime.minutes(trialLeft)} min of Full HD left", {})
                     Plan.FREE -> SettingRow("Free plan", "${FreeTime.SESSION_MINUTES} min sessions", {})
                 }
-                if (plan != Plan.UNLIMITED) SettingRow("Go unlimited", "No limits, Full HD" + (price?.let { " · $it" } ?: ""), onUnlock, chevron = true)
+                if (plan != Plan.UNLIMITED) SettingRow("Go unlimited", price?.let { "Full HD · $it" } ?: "No limits, Full HD", onUnlock, chevron = true) // local prices run long (179,99 CZK)
                 Section("Picture")
                 SettingRow("Picture quality", if (plan == Plan.FREE) "720p · $FREE_FPS fps" else "Full HD · $FULL_FPS fps", {})
                 PrefRow(viewModel, "Blur the sides of upright video", Prefs.BLUR_BARS)

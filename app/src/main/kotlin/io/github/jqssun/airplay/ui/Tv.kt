@@ -9,6 +9,15 @@ import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Build
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,3 +91,19 @@ fun Modifier.dpadAdjust(onLeft: () -> Unit, onRight: () -> Unit): Modifier = com
         }
     }
 }
+
+// The UI is laid out for a 960×540 dp TV. Other screens (phones, tablets) get it scaled to fit and centred;
+// on TVs the scale is 1. Overlays re-apply `density` inside their own windows.
+@Composable
+fun TvStage(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val scale = minOf(maxWidth / STAGE_WIDTH, maxHeight / STAGE_HEIGHT)
+        val d = LocalDensity.current
+        CompositionLocalProvider(LocalDensity provides Density(d.density * scale, d.fontScale)) {
+            Box(Modifier.size(STAGE_WIDTH, STAGE_HEIGHT), content = content)
+        }
+    }
+}
+
+val STAGE_WIDTH = 960.dp
+val STAGE_HEIGHT = 540.dp

@@ -15,11 +15,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.jqssun.airplay.service.AirPlayService
 import io.github.jqssun.airplay.ui.HomeScreen
+import io.github.jqssun.airplay.ui.TvStage
 import io.github.jqssun.airplay.ui.theme.AirPlayTheme
 import io.github.jqssun.airplay.viewmodel.LocalNetworkAccess
 import io.github.jqssun.airplay.viewmodel.MainViewModel
@@ -58,6 +65,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // phones: full screen like a video player, bars come back with a swipe (TVs have none)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
 
         val missing = buildList {
             if (!hasLocalNetwork()) add(Manifest.permission.ACCESS_LOCAL_NETWORK)
@@ -88,12 +100,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AirPlayTheme {
-                HomeScreen(
-                    viewModel = viewModel,
-                    onSurfaceAvailable = { viewModel.onSurfaceAvailable(it) },
-                    onSurfaceDestroyed = { viewModel.onSurfaceDestroyed(it) },
-                    onLocalNetwork = ::_requestLocalNetwork
-                )
+                TvStage(Modifier.background(Color.Black)) {
+                    HomeScreen(
+                        viewModel = viewModel,
+                        onSurfaceAvailable = { viewModel.onSurfaceAvailable(it) },
+                        onSurfaceDestroyed = { viewModel.onSurfaceDestroyed(it) },
+                        onLocalNetwork = ::_requestLocalNetwork
+                    )
+                }
             }
         }
     }
