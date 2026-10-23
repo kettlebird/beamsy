@@ -18,7 +18,7 @@ Open Beamsy on the TV, then pick the TV in Screen Mirroring on the iPhone. The a
 
 ## Based on
 
-This is a GPL-3.0 fork of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), which is built on [UxPlay](https://github.com/FDH2/UxPlay) (also GPL-3.0). The upstream `LICENSE` is kept, and this project is released under the same licence. Source for this app: https://github.com/yugio999/beamsy.
+This is a GPL-3.0 fork of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), which is built on [UxPlay](https://github.com/FDH2/UxPlay) (also GPL-3.0). The upstream `LICENSE` is kept, and this project is released under the same licence. Source for this app: https://github.com/kettlebird/beamsy.
 
 Also used, as in upstream: [FFmpeg](https://ffmpeg.org) (lossless audio decoder) and [Next Player](https://github.com/anilbeesetti/nextplayer) (video player).
 
@@ -76,7 +76,7 @@ Outputs:
    `storeFile` is resolved from each module's folder, so `../upload.jks` works for both `:app` and `:unlock`.
 3. **Play Console › Monetize › Products › One-time products:** create product ID **`full_hd`** (exactly this, it is in `FullHd.PRODUCT_ID`), name "Beamsy Unlimited", price $6.99, and activate it. This needs a payments profile, and the app must have a bundle uploaded to any track first.
 4. **Test the purchase:** add your Google account under Settings › License testing, install Beamsy from the internal or closed testing link, and buy Unlimited. Test cards are never charged. Refund it in Order management to check that the TV drops back to 720p on the next launch.
-5. Keep https://github.com/yugio999/beamsy public and up to date with each release: GPL-3.0 requires the source to be available to everyone who gets the app. It is linked from this README and both apps' `full_description.txt`.
+5. Keep https://github.com/kettlebird/beamsy public and up to date with each release: GPL-3.0 requires the source to be available to everyone who gets the app. It is linked from this README and both apps' `full_description.txt`.
 6. Publish [`docs/privacy-policy.md`](docs/privacy-policy.md) at a public URL and enter that URL in Play Console for both apps. Data safety form: Purchase history collected (Google Play Billing, app functionality, not shared); nothing else.
 7. Store listings live in `fastlane/metadata/android/en-US` (Beamsy; `unlock/fastlane` is only for stores that get the key app): title, short and full description, changelog, 512 px icon, 1024×500 feature graphic, 1280×720 TV banner and 1920×1080 TV screenshots. The listing art (icon, feature graphic, TV banner and the five TV screenshots) is rendered by [`design/play-store/render.py`](design/play-store/render.py) from [`design/play-store/listing.html`](design/play-store/listing.html) and the UI design [`design/beamsy-ui.html`](design/beamsy-ui.html), then copied into `fastlane/`. The app's launcher icon and TV banner drawables come from [`tools/make_brand_assets.py`](tools/make_brand_assets.py) in the same dark style. Android TV apps also need the Android TV form factor turned on (Play Console › Release › Advanced settings › Form factors) and pass a separate TV quality review.
 8. Developer name in Play Console: **Kettlebird**. Price: Beamsy free (1-hour Full HD trial, then 15-minute sessions), Unlimited $6.99 in-app purchase (one-time).
